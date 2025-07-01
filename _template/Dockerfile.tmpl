@@ -1,0 +1,42 @@
+# syntax=docker/dockerfile:1
+
+# Base image with Go 1.18 and Debian Bullseye
+# This image provides the Go runtime and development tools
+FROM golang:1.18-bullseye AS base
+
+# Builder stage for compiling the application
+# This stage contains all build dependencies and compiles the Go code
+FROM base AS builder
+
+# Set the working directory for build operations
+WORKDIR /app
+
+# Copy dependency files first to leverage Docker layer caching
+# This ensures dependencies are only re-downloaded when go.mod or go.sum changes
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy the entire source code into the container
+# This includes all application code and resources
+COPY . ./
+
+# Build the application for Linux with CGO disabled
+# CGO_ENABLED=0 creates a statically linked binary for better portability
+RUN CGO_ENABLED=0 GOOS=linux go build -o {{.RepoName}} ./cmd/{{.RepoName}}/main.go
+
+# Runner stage for the final application
+# This stage contains only the necessary runtime components
+FROM base AS runner
+
+# Set the working directory for the application
+WORKDIR /app
+
+# Copy only the compiled binary from the builder stage
+# This keeps the final image size minimal
+COPY --from=builder /app/{{.RepoName}} ./
+
+# Set the default command to run the application
+# The application will start in 'run' mode by default
+CMD ["./{{.RepoName}}", "run"]

@@ -1,0 +1,32 @@
+package cmd
+
+import (
+	"os"
+
+	"github.com/spf13/cobra"
+	"github.com/zeroxsolutions/sazabi"
+)
+
+var (
+	rootCmd = &cobra.Command{
+		Use:   "{{.RepoName}}",
+		Short: "{{.RepoName}}",
+		Long:  "{{.RepoName}}",
+	}
+)
+
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+
+
+func init() {
+	sazabi.RegisterCommand(
+		sazabi.Command{
+			Name: "{{.RepoName}}",
+			Description: "{{.RepoName}}",
+		},
+	)
+}

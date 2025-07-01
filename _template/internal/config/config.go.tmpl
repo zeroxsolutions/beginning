@@ -1,0 +1,28 @@
+package config
+
+import (
+	"github.com/spf13/viper"
+	"github.com/zeroxsolutions/sazabi"
+)
+
+var cfg *viper.Viper
+
+func init() {
+	cfg = viper.New()
+	cfg.SetConfigName("config")
+	cfg.SetConfigType("yaml")
+	cfg.AddConfigPath("./config")
+
+	err := cfg.ReadInConfig()
+	if err != nil {
+		panic(sazabi.Errorf("fatal error config file: %w", err))
+	}
+}
+
+type Config struct {
+	Server ServerConfig
+}
+
+type ServerConfig struct {
+	Port string
+}
