@@ -4,4 +4,4 @@ import (
 	"github.com/google/wire"
 )
 
-var ProviderRepositoriesSet = wire.NewSet()
+var ProviderSetRepositories = wire.NewSet()

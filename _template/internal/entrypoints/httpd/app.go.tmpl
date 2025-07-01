@@ -1,0 +1,30 @@
+package httpd
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/zeroxsolutions/barbatos/app"
+	"{{.ModuleName}}/internal/config"
+)
+
+type App struct {
+	srv          *gin.Engine
+	serverConfig *config.Server
+}
+
+func (app *App) Run() error {
+	return app.srv.Run(app.serverConfig.Addr)
+}
+
+func (*App) Shutdown() error {
+	return nil
+}
+
+func NewApp(
+	srv *gin.Engine,
+	appConfig *config.App,
+) app.App {
+	return &App{
+		srv:          srv,
+		serverConfig: &appConfig.Server,
+	}
+}

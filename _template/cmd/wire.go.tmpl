@@ -1,1 +1,25 @@
+//go:build wireinject
+// +build wireinject
+
 package cmd
+
+import (
+	"github.com/google/wire"
+	"github.com/zeroxsolutions/barbatos/app"
+	"{{.ModuleName}}/internal/config"
+	"{{.ModuleName}}/internal/entrypoints/httpd"
+	"{{.ModuleName}}/internal/entrypoints/httpd/controller"
+	"{{.ModuleName}}/internal/entrypoints/httpd/router"
+)
+
+func InitializeApp(
+	appConfig *config.App,
+) (app.App, error) {
+	wire.Build(
+		controller.ProviderSetController,
+		router.ProviderSetRouter,
+		httpd.ProviderSetHTTPServer,
+		httpd.NewApp,
+	)
+	return nil, nil
+}
