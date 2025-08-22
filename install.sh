@@ -58,9 +58,10 @@ detect_platform() {
 install_cli() {
     local tag="$VERSION"
     local registry="ghcr.io"
-    local url="https://$registry/$REPO:$tag"
+    local url="$registry/$REPO:$tag"
     
     print_status "Installing beginning CLI version $VERSION for $OS-$ARCH..."
+    print_status "Registry URL: $url"
     
     # Create temporary directory
     local temp_dir=$(mktemp -d)
@@ -69,7 +70,23 @@ install_cli() {
     # Download using oras
     if command -v oras &> /dev/null; then
         print_status "Using oras to download from GitHub Container Registry..."
-        oras pull "$url" --output .
+        print_status "Pulling from: $url"
+        
+        # Verify URL format
+        if [[ ! "$url" =~ ^[^/]+/[^:]+:[^/]+$ ]]; then
+            print_error "Invalid registry URL format: $url"
+            print_error "Expected format: registry/repository:tag"
+            exit 1
+        fi
+        
+        # Try to pull from registry
+        if ! oras pull "$url" --output .; then
+            print_warning "Failed to pull from registry, falling back to GitHub releases..."
+            cd /
+            rm -rf "$temp_dir"
+            print_warning "Please install manually from GitHub releases or build from source"
+            exit 1
+        fi
     elif command -v go &> /dev/null; then
         print_status "Installing oras CLI tool via Go..."
         go install oras.land/oras/cmd/oras@latest
@@ -77,7 +94,16 @@ install_cli() {
         
         if command -v oras &> /dev/null; then
             print_status "Using oras to download from GitHub Container Registry..."
-            oras pull "$url" --output .
+            print_status "Pulling from: $url"
+            
+            # Try to pull from registry
+            if ! oras pull "$url" --output .; then
+                print_warning "Failed to pull from registry, falling back to GitHub releases..."
+                cd /
+                rm -rf "$temp_dir"
+                print_warning "Please install manually from GitHub releases or build from source"
+                exit 1
+            fi
         else
             print_warning "Failed to install oras, falling back to GitHub releases..."
         fi
