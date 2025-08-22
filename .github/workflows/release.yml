@@ -116,13 +116,13 @@ jobs:
           echo "Pushing version: $VERSION to GitHub Container Registry"
           echo "Using oras version: $(oras version)"
           
-          # Create a simple manifest file
-          cat > manifest.json << EOF
+          # Create manifest for version
+          cat > manifest-version.json << EOF
           {
             "name": "beginning",
             "version": "$VERSION",
             "type": "cli",
-            "description": "Go project scaffolder CLI tool",
+            "description": "Go project scaffolder CLI tool - Version $VERSION",
             "platforms": [
               "linux-amd64",
               "linux-arm64", 
@@ -134,8 +134,29 @@ jobs:
           }
           EOF
           
-          echo "Created manifest:"
-          cat manifest.json
+          # Create manifest for latest
+          cat > manifest-latest.json << EOF
+          {
+            "name": "beginning",
+            "version": "latest",
+            "type": "cli",
+            "description": "Go project scaffolder CLI tool - Latest Version",
+            "platforms": [
+              "linux-amd64",
+              "linux-arm64", 
+              "darwin-amd64",
+              "darwin-arm64",
+              "windows-amd64",
+              "windows-arm64"
+            ]
+          }
+          EOF
+          
+          echo "Created manifests:"
+          echo "Version manifest:"
+          cat manifest-version.json
+          echo "Latest manifest:"
+          cat manifest-latest.json
           
           # Push CLI tool as OCI artifact to GitHub Container Registry (without --manifest flag)
           echo "Pushing version $VERSION..."
@@ -161,6 +182,12 @@ jobs:
           
           echo "Successfully pushed latest tag"
           
+          # Summary of what was pushed
+          echo "=== PUSH SUMMARY ==="
+          echo "✅ Version $VERSION: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION"
+          echo "✅ Latest tag: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          echo "✅ Both tags now contain the same artifacts"
+          
           # Verify pushed artifacts (using compatible commands)
           echo "Verifying pushed artifacts..."
           echo "Successfully pushed to:"
@@ -171,18 +198,26 @@ jobs:
           echo "Available oras commands:"
           oras --help | head -10
           
-          # Test pull to verify push was successful
+          # Test pull to verify both tags are accessible
           echo "Testing pull to verify artifacts..."
-          mkdir -p test-pull
-          cd test-pull
           
-          # Try to pull one artifact to verify it's accessible
+          # Test version tag
+          echo "Testing version tag $VERSION..."
+          mkdir -p test-pull-version
+          cd test-pull-version
           oras pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION --output .
-          echo "Successfully pulled artifacts from version $VERSION"
-          
-          # Clean up test directory
+          echo "✅ Successfully pulled artifacts from version $VERSION"
           cd ..
-          rm -rf test-pull
+          rm -rf test-pull-version
+          
+          # Test latest tag
+          echo "Testing latest tag..."
+          mkdir -p test-pull-latest
+          cd test-pull-latest
+          oras pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest --output .
+          echo "✅ Successfully pulled artifacts from latest tag"
+          cd ..
+          rm -rf test-pull-latest
 
       - name: Check permissions and prepare release
         run: |
