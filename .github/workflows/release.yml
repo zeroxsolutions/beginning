@@ -32,8 +32,8 @@ jobs:
 
       - name: Test Go module
         run: |
-          echo "Running tests (excluding template folder)..."
-          go test ./... -exclude=./template
+          echo "Running tests (main package only)..."
+          go test .
           
           echo "All tests passed"
 
