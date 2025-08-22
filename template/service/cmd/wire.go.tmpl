@@ -12,7 +12,7 @@ import (
 	"{{.ModuleName}}/internal/entrypoints/httpd/router"
 )
 
-func InitializeApp(
+func initHTTPDApplication(
 	appConfig *config.App,
 ) (app.App, error) {
 	wire.Build(

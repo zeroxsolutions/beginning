@@ -1,0 +1,69 @@
+package cmd
+
+import (
+	"os"
+
+	"github.com/spf13/cobra"
+	"github.com/zeroxsolutions/sazabi"
+	"github.com/jinzhu/configor"
+	"{{.ModuleName}}/internal/config"
+)
+
+var (
+	configFilePaths []string
+)
+
+
+var (
+	rootCmd cobra.Command = cobra.Command{
+		Use:   "{{.RepoName}}",
+		Short: "{{.RepoName}}",
+		Long:  "{{.RepoName}}",
+	}
+	runCmd cobra.Command = cobra.Command{
+		Use:   "run",
+		Short: "run",
+		Long:  "run",
+		Run: func(cmd *cobra.Command, args []string) {
+			appConfig, err := ReadConfig[config.App](configFilePaths...)
+			if err != nil {
+				sazabi.Fatalf("read config err %v\n", err)
+			}
+			application, err := initHTTPDApplication(appConfig)
+			if err != nil {
+				sazabi.Fatalf("initial app err %v\n", err)
+			}
+			if err := application.Run(); err != nil {
+				sazabi.Fatalf("run app err %v\n", err)
+			}
+		},
+	}
+)
+
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+
+
+func init() {
+	rootCmd.Version = Version
+	rootCmd.Root().CompletionOptions.DisableDefaultCmd = true
+
+	// Run
+	runCmd.Flags().StringSliceVarP(&configFilePaths, "config", "c", []string{"config.yml"}, "config file path")
+
+	for _, cmd := range []*cobra.Command{&runCmd} {
+		rootCmd.AddCommand(cmd)
+	}
+}
+
+// ReadConfig
+func ReadConfig[T config.App](configFilePaths ...string) (*T, error) {
+	config := new(T)
+	if err := configor.New(&configor.Config{}).Load(config, configFilePaths...); err != nil {
+		return nil, err
+	}
+	return config, nil
+}

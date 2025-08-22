@@ -1,0 +1,34 @@
+package adapters
+
+import (
+	"time"
+	
+	"github.com/zeroxsolutions/sazabi"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"{{.ModuleName}}/internal/config"
+)
+
+func NewDB(appConfig *config.App) (*gorm.DB, error) {
+	gormConfig := &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	}
+	if appConfig.Database.Debug {
+		gormConfig.Logger = logger.Default.LogMode(logger.Info)
+	}
+	db, err := gorm.Open(mysql.Open(appConfig.Database.URI), gormConfig)
+	if err != nil {
+		sazabi.Fatalf("connect DB err %v", err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		sazabi.Fatalf("Get DB err %v\n", err)
+	}
+	if appConfig.Database.Pool.Enabled {
+		sqlDB.SetMaxIdleConns(appConfig.Database.Pool.MaxIdleConns)
+		sqlDB.SetMaxOpenConns(appConfig.Database.Pool.MaxOpenConns)
+		sqlDB.SetConnMaxLifetime(time.Duration(appConfig.Database.Pool.ConnMaxLifetime) * time.Second)
+	}
+	return db, nil
+}

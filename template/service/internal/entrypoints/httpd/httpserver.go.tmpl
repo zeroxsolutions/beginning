@@ -1,0 +1,44 @@
+package httpd
+
+import (
+	"time"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	_ "{{.ModuleName}}/docs"
+	"{{.ModuleName}}/internal/config"
+	"{{.ModuleName}}/internal/entrypoints/httpd/router"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+)
+
+// @BasePath /
+// @title {{.RepoName}} API docs
+// @version v0.0.1
+// @description {{.RepoName}} API docs
+func NewHTTPServer(
+	appConfig *config.App,
+	healthRouter *router.HealthRouter,
+) *gin.Engine {
+	gin.SetMode(gin.ReleaseMode)
+	if appConfig.Server.Debug {
+		gin.SetMode(gin.DebugMode)
+	}
+	ginDefault := gin.Default()
+	// Configure CORS
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = appConfig.Server.AllowedOrigins
+	corsConfig.AllowMethods = appConfig.Server.AllowedMethods
+	corsConfig.AllowHeaders = appConfig.Server.AllowedHeaders
+	corsConfig.AllowCredentials = appConfig.Server.AllowCredentials
+	corsConfig.MaxAge = time.Duration(appConfig.Server.MaxHeaderBytes) * time.Second
+	ginDefault.Use(cors.New(corsConfig))
+	ginDefault.Use(gin.Recovery())
+	ginDefault.Use(gin.Logger())
+	ginDefault.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		SkipPaths: []string{"/health", "/swagger/*any"},
+	}))
+	healthRouter.RegisterRoutes(ginDefault.Group("/health"))
+	ginDefault.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	return ginDefault
+}
