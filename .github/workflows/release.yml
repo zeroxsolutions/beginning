@@ -1,4 +1,4 @@
-name: Build and Release CLI
+name: Release Go Module
 
 on:
   push:
@@ -6,17 +6,11 @@ on:
       - 'v*.*.*'
   workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
-  build-and-push:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
-      id-token: write
 
     steps:
       - name: Checkout repository
@@ -27,225 +21,25 @@ jobs:
         with:
           go-version: '1.24'
 
-      - name: Build for multiple platforms
+      - name: Verify Go module
         run: |
-          # Build for Linux AMD64
-          GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o beginning-linux-amd64 .
+          echo "Verifying Go module..."
+          go mod verify
+          go mod tidy
+          go mod download
           
-          # Build for Linux ARM64
-          GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o beginning-linux-arm64 .
-          
-          # Build for macOS AMD64
-          GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o beginning-darwin-amd64 .
-          
-          # Build for macOS ARM64
-          GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o beginning-darwin-arm64 .
-          
-          # Build for Windows AMD64
-          GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o beginning-windows-amd64.exe
-          
-          # Build for Windows ARM64
-          GOOS=windows GOARCH=arm64 go build -ldflags="-s -w" -o beginning-windows-arm64.exe
+          echo "Go module is ready for release"
 
-      - name: Create release archive
+      - name: Test Go module
         run: |
-          # Create tar.gz for Linux
-          tar -czf beginning-linux-amd64.tar.gz beginning-linux-amd64 template/
-          tar -czf beginning-linux-arm64.tar.gz beginning-linux-arm64 template/
+          echo "Running tests..."
+          go test ./...
           
-          # Create tar.gz for macOS
-          tar -czf beginning-darwin-amd64.tar.gz beginning-darwin-amd64 template/
-          tar -czf beginning-darwin-arm64.tar.gz beginning-darwin-arm64 template/
-          
-          # Create zip for Windows
-          zip beginning-windows-amd64.zip beginning-windows-amd64.exe template/
-          zip beginning-windows-arm64.zip beginning-windows-arm64.exe template/
-          
-          # List created files
-          echo "Created release archives:"
-          ls -la *.tar.gz *.zip
-          
-          # Verify file sizes
-          echo "File sizes:"
-          du -h *.tar.gz *.zip
-
-      - name: Install oras CLI tool
-        run: |
-          # Install oras CLI tool using Go install (most reliable method)
-          echo "Installing oras CLI tool using Go install..."
-          
-          # Install oras via Go
-          go install oras.land/oras/cmd/oras@latest
-          
-          # Verify installation
-          echo "Verifying oras installation..."
-          oras version
-          echo "oras CLI tool installed successfully"
-          
-          # Check PATH and location
-          which oras
-          echo "oras location: $(which oras)"
-          echo "Go bin path: $(go env GOPATH)/bin"
-          
-          # Add Go bin to PATH if not already there
-          export PATH="$(go env GOPATH)/bin:$PATH"
-          echo "Updated PATH: $PATH"
-          
-          # Final verification
-          echo "Final oras verification:"
-          oras version
-          echo "oras location: $(which oras)"
-          
-          # Test oras functionality
-          echo "Testing oras functionality..."
-          oras --help | head -5
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push CLI tool to GitHub Container Registry
-        run: |
-          # Extract version from tag (remove 'v' prefix)
-          VERSION=${GITHUB_REF#refs/tags/}
-          VERSION=${VERSION#v}
-          
-          echo "Pushing version: $VERSION to GitHub Container Registry"
-          echo "Using oras version: $(oras version)"
-          
-          # Create manifest for version
-          cat > manifest-version.json << EOF
-          {
-            "name": "beginning",
-            "version": "$VERSION",
-            "type": "cli",
-            "description": "Go project scaffolder CLI tool - Version $VERSION",
-            "platforms": [
-              "linux-amd64",
-              "linux-arm64", 
-              "darwin-amd64",
-              "darwin-arm64",
-              "windows-amd64",
-              "windows-arm64"
-            ]
-          }
-          EOF
-          
-          # Create manifest for latest
-          cat > manifest-latest.json << EOF
-          {
-            "name": "beginning",
-            "version": "latest",
-            "type": "cli",
-            "description": "Go project scaffolder CLI tool - Latest Version",
-            "platforms": [
-              "linux-amd64",
-              "linux-arm64", 
-              "darwin-amd64",
-              "darwin-arm64",
-              "windows-amd64",
-              "windows-arm64"
-            ]
-          }
-          EOF
-          
-          echo "Created manifests:"
-          echo "Version manifest:"
-          cat manifest-version.json
-          echo "Latest manifest:"
-          cat manifest-latest.json
-          
-          # Push CLI tool as OCI artifact to GitHub Container Registry (without --manifest flag)
-          echo "Pushing version $VERSION..."
-          oras push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION \
-            beginning-linux-amd64.tar.gz:application/gzip \
-            beginning-linux-arm64.tar.gz:application/gzip \
-            beginning-darwin-amd64.tar.gz:application/gzip \
-            beginning-darwin-arm64.tar.gz:application/gzip \
-            beginning-windows-amd64.zip:application/zip \
-            beginning-windows-arm64.zip:application/zip
-          
-          echo "Successfully pushed version $VERSION"
-          
-          # Also push with latest tag
-          echo "Pushing latest tag..."
-          oras push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            beginning-linux-amd64.tar.gz:application/gzip \
-            beginning-linux-arm64.tar.gz:application/gzip \
-            beginning-darwin-amd64.tar.gz:application/gzip \
-            beginning-darwin-arm64.tar.gz:application/gzip \
-            beginning-windows-amd64.zip:application/zip \
-            beginning-windows-arm64.zip:application/zip
-          
-          echo "Successfully pushed latest tag"
-          
-          # Summary of what was pushed
-          echo "=== PUSH SUMMARY ==="
-          echo "✅ Version $VERSION: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION"
-          echo "✅ Latest tag: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
-          echo "✅ Both tags now contain the same artifacts"
-          
-          # Verify pushed artifacts (using compatible commands)
-          echo "Verifying pushed artifacts..."
-          echo "Successfully pushed to:"
-          echo "  - ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION"
-          echo "  - ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
-          
-          # Show oras help to see available commands
-          echo "Available oras commands:"
-          oras --help | head -10
-          
-          # Test pull to verify both tags are accessible
-          echo "Testing pull to verify artifacts..."
-          
-          # Test version tag
-          echo "Testing version tag $VERSION..."
-          mkdir -p test-pull-version
-          cd test-pull-version
-          oras pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION --output .
-          echo "✅ Successfully pulled artifacts from version $VERSION"
-          cd ..
-          rm -rf test-pull-version
-          
-          # Test latest tag
-          echo "Testing latest tag..."
-          mkdir -p test-pull-latest
-          cd test-pull-latest
-          oras pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest --output .
-          echo "✅ Successfully pulled artifacts from latest tag"
-          cd ..
-          rm -rf test-pull-latest
-
-      - name: Check permissions and prepare release
-        run: |
-          echo "Checking GitHub permissions..."
-          echo "GITHUB_ACTOR: $GITHUB_ACTOR"
-          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
-          echo "GITHUB_REF: $GITHUB_REF"
-          echo "GITHUB_SHA: $GITHUB_SHA"
-          
-          # Check if we can access the repository
-          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-               -H "Accept: application/vnd.github.v3+json" \
-               "https://api.github.com/repos/${{ github.repository }}" | jq '.name, .full_name, .permissions'
-          
-          # List files to be included in release
-          echo "Files to be included in release:"
-          ls -la *.tar.gz *.zip
+          echo "All tests passed"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            beginning-linux-amd64.tar.gz
-            beginning-linux-arm64.tar.gz
-            beginning-darwin-amd64.tar.gz
-            beginning-darwin-arm64.tar.gz
-            beginning-windows-amd64.zip
-            beginning-windows-arm64.zip
           draft: false
           prerelease: false
           generate_release_notes: true

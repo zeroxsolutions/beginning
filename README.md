@@ -19,27 +19,22 @@ A powerful CLI tool designed to scaffold Go projects from predefined templates w
 ### Quick Install (Recommended)
 ```bash
 # Install latest version
-curl -fsSL https://raw.githubusercontent.com/zeroxsolutions/beginning/master/install.sh | bash
+go install github.com/zeroxsolutions/beginning@latest
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/zeroxsolutions/beginning/master/install.sh | bash -s -- -v v0.0.1
+go install github.com/zeroxsolutions/beginning@v0.0.1
 ```
 
-### From GitHub Container Registry
+**That's it!** 🎉 
+
+The CLI tool will be automatically built for your platform and installed to your Go bin directory. All templates are embedded in the binary, so no additional downloads are needed.
+
+### Alternative: From Source
 ```bash
-# Install oras CLI tool first
-# macOS
-brew install oras
-
-# Linux
-curl -LO https://github.com/oras-project/oras/releases/latest/download/oras_linux_amd64.tar.gz
-tar -xzf oras_linux_amd64.tar.gz
-sudo mv oras /usr/local/bin/
-
-# Download and install from GitHub Container Registry
-oras pull ghcr.io/zeroxsolutions/beginning:latest --output .
-chmod +x beginning-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
-sudo mv beginning-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m) /usr/local/bin/beginning
+# Clone and build from source
+git clone https://github.com/zeroxsolutions/beginning.git
+cd beginning
+go install .
 ```
 
 ### From Source
@@ -193,14 +188,33 @@ beginning create -t service -r custom-name -m github.com/company/custom
 ### Versioning
 We use semantic versioning (SemVer) for releases:
 - Format: `vX.Y.Z` (e.g., `v0.0.1`, `v1.0.0`)
-- Latest version: `ghcr.io/zeroxsolutions/beginning:latest`
-- Specific version: `ghcr.io/zeroxsolutions/beginning:v0.0.1`
+- Latest version: `github.com/zeroxsolutions/beginning@latest`
+- Specific version: `github.com/zeroxsolutions/beginning@v0.0.1`
 
 ### Release Process
 1. Create and push a new tag: `git tag v0.0.1 && git push origin v0.0.1`
-2. GitHub Actions automatically builds and publishes to GitHub Container Registry
-3. Binary files are available for all supported platforms
-4. GitHub Release is created with downloadable assets
+2. GitHub Actions automatically verifies and tests the Go module
+3. Go modules are automatically published for `go install`
+4. All templates are embedded in the binary - no separate downloads needed
+
+### How It Works
+```bash
+# When you run this:
+go install github.com/zeroxsolutions/beginning@latest
+
+# Go automatically:
+# 1. Downloads the source code
+# 2. Builds the binary for your platform (Linux/macOS/Windows)
+# 3. Embeds all templates into the binary
+# 4. Installs to your Go bin directory
+# 5. Makes it available as 'beginning' command
+```
+
+### Why This Approach?
+- 🚀 **Automatic**: No need to choose the right binary for your platform
+- 🔧 **Native**: Built specifically for your OS and architecture
+- 📦 **Complete**: All templates are embedded, no missing files
+- 🎯 **Simple**: One command, everything works
 
 ## 🛠️ Development
 
@@ -211,6 +225,20 @@ go build -o beginning main.go
 
 # Build with Go 1.24+ optimizations
 go build -ldflags="-s -w -X main.version=$(git describe --tags --always --dirty)" -o beginning main.go
+
+# Build for specific platform (for testing)
+GOOS=linux GOARCH=amd64 go build -o beginning-linux-amd64 main.go
+GOOS=darwin GOARCH=arm64 go build -o beginning-darwin-arm64 main.go
+```
+
+### Local Development
+```bash
+# Install locally for development
+go install .
+
+# Run directly
+go run main.go list
+go run main.go create -t service -r myproject -m github.com/company/myproject
 ```
 
 ### Testing
