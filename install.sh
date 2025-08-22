@@ -54,6 +54,124 @@ detect_platform() {
     print_success "Detected: $OS-$ARCH"
 }
 
+# Function to install from GitHub releases
+install_from_github_releases() {
+    print_status "Installing from GitHub releases..."
+    
+    # Create temporary directory
+    local temp_dir=$(mktemp -d)
+    cd "$temp_dir"
+    
+    # Alternative: download from GitHub releases
+    local release_url="https://github.com/$REPO/releases/download/$VERSION"
+    
+    # First, check if the release exists and get available releases
+    print_status "Checking release availability..."
+    local available_releases=$(curl -s "https://api.github.com/repos/$REPO/releases" | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/')
+    
+    if [ -z "$available_releases" ]; then
+        print_error "No releases found. This might be a new repository."
+        print_status "Try building from source instead:"
+        echo "  git clone https://github.com/$REPO.git"
+        echo "  cd beginning && go build -o beginning main.go"
+        exit 1
+    fi
+    
+    print_status "Available releases:"
+    echo "$available_releases" | head -5
+    
+    # Check if requested version exists
+    if ! echo "$available_releases" | grep -q "^$VERSION$"; then
+        print_error "Release $VERSION not found."
+        print_status "Using latest available release instead..."
+        VERSION=$(echo "$available_releases" | head -1)
+        print_status "Switched to version: $VERSION"
+    fi
+    
+    if [ "$OS" = "windows" ]; then
+        local file="beginning-$OS-$ARCH.zip"
+        print_status "Downloading $file from GitHub releases..."
+        print_status "URL: $release_url/$file"
+        
+        # Download with better error handling
+        if ! curl -L -f -o "$file" "$release_url/$file"; then
+            print_error "Failed to download $file"
+            print_status "Trying alternative download method..."
+            
+            # Try direct download from releases page
+            local alt_url="https://github.com/$REPO/releases/latest/download/$file"
+            print_status "Trying: $alt_url"
+            curl -L -f -o "$file" "$alt_url"
+        fi
+        
+        # Verify download
+        if [ ! -s "$file" ]; then
+            print_error "Downloaded file is empty"
+            ls -la "$file"
+            exit 1
+        fi
+        
+        if [ "$(file "$file" | grep -c 'Zip archive')" -eq 0 ]; then
+            print_error "Downloaded file is not a valid zip archive"
+            print_status "File content (first 100 chars):"
+            head -c 100 "$file"
+            echo
+            print_status "File info:"
+            file "$file"
+            ls -la "$file"
+            exit 1
+        fi
+        
+        print_status "Extracting $file..."
+        unzip "$file"
+    else
+        local file="beginning-$OS-$ARCH.tar.gz"
+        print_status "Downloading $file from GitHub releases..."
+        print_status "URL: $release_url/$file"
+        
+        # Download with better error handling
+        if ! curl -L -f -o "$file" "$release_url/$file"; then
+            print_error "Failed to download $file"
+            print_status "Trying alternative download method..."
+            
+            # Try direct download from releases page
+            local alt_url="https://github.com/$REPO/releases/latest/download/$file"
+            print_status "Trying: $alt_url"
+            curl -L -f -o "$file" "$alt_url"
+        fi
+        
+        # Verify download
+        if [ ! -s "$file" ]; then
+            print_error "Downloaded file is empty"
+            ls -la "$file"
+            exit 1
+        fi
+        
+        if [ "$(file "$file" | grep -c 'gzip compressed data')" -eq 0 ]; then
+            print_error "Downloaded file is not a valid tar.gz archive"
+            print_status "File content (first 100 chars):"
+            head -c 100 "$file"
+            echo
+            print_status "File info:"
+            file "$file"
+            ls -la "$file"
+            exit 1
+        fi
+        
+        print_status "Extracting $file..."
+        tar -xzf "$file"
+    fi
+    
+    # Continue with installation
+    install_binary
+}
+
+# Function to install the binary
+install_binary() {
+    # Continue with installation
+    install_binary
+}
+
 # Function to download and install
 install_cli() {
     local tag="$VERSION"
@@ -96,12 +214,14 @@ install_cli() {
         print_status "URL format validation passed"
         
         # Try to pull from registry
+        print_status "Attempting to pull from registry (may require authentication)..."
         if ! oras pull "$url" --output .; then
-            print_warning "Failed to pull from registry, falling back to GitHub releases..."
+            print_warning "Failed to pull from registry (authentication required)"
+            print_status "Falling back to GitHub releases..."
             cd /
             rm -rf "$temp_dir"
-            print_warning "Please install manually from GitHub releases or build from source"
-            exit 1
+            # Continue with GitHub releases fallback instead of exiting
+            return
         fi
     elif command -v go &> /dev/null; then
         print_status "Installing oras CLI tool via Go..."
@@ -113,12 +233,14 @@ install_cli() {
             print_status "Pulling from: $url"
             
             # Try to pull from registry
+            print_status "Attempting to pull from registry (may require authentication)..."
             if ! oras pull "$url" --output .; then
-                print_warning "Failed to pull from registry, falling back to GitHub releases..."
+                print_warning "Failed to pull from registry (authentication required)"
+                print_status "Falling back to GitHub releases..."
                 cd /
                 rm -rf "$temp_dir"
-                print_warning "Please install manually from GitHub releases or build from source"
-                exit 1
+                # Continue with GitHub releases fallback instead of exiting
+                return
             fi
         else
             print_warning "Failed to install oras, falling back to GitHub releases..."
