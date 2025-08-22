@@ -10,6 +10,7 @@ A powerful CLI tool designed to scaffold Go projects from predefined templates w
 - **Cross-Platform**: Works on Windows, macOS, and Linux
 - **Post-Generation Setup**: Automatic dependency management and initialization
 - **Extensible**: Easy to add new template types
+- **Go 1.24+ Ready**: Built with latest Go features and optimizations
 
 ## 📦 Installation
 
@@ -106,7 +107,7 @@ beginning list --help
 | `--repo` | `-r` | Repository/project name | Required |
 | `--module` | `-m` | Go module name | Required |
 | `--output` | `-o` | Output directory path | `./{repo-name}` |
-| `--go-version` | `-g` | Go version to use | `1.21` |
+| `--go-version` | `-g` | Go version to use | `1.24` |
 | `--values` | `-v` | Path to values.yaml file | `values.yaml` |
 
 ### Values File (Optional)
@@ -116,7 +117,7 @@ Create a `values.yaml` file to store default values:
 ```yaml
 ModuleName: github.com/company/project
 RepoName: myproject
-GoVersion: 1.21
+GoVersion: 1.24
 ```
 
 ## 🏗️ Template Types
@@ -174,7 +175,7 @@ beginning create -t library -r utils -m github.com/company/utils -o ~/Projects/
 # Create values.yaml
 echo "ModuleName: github.com/company/api
 RepoName: api-service
-GoVersion: 1.21" > values.yaml
+GoVersion: 1.24" > values.yaml
 
 # Create project
 beginning create -t service
@@ -203,12 +204,23 @@ We use semantic versioning (SemVer) for releases:
 
 ### Building
 ```bash
+# Basic build
 go build -o beginning main.go
+
+# Build with Go 1.24+ optimizations
+go build -ldflags="-s -w -X main.version=$(git describe --tags --always --dirty)" -o beginning main.go
 ```
 
 ### Testing
 ```bash
+# Run all tests
 go test ./...
+
+# Run tests with coverage
+go test -cover ./...
+
+# Run tests with race detection
+go test -race ./...
 ```
 
 ### Adding Dependencies

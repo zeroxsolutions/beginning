@@ -24,7 +24,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.24'
 
       - name: Build for multiple platforms
         run: |
@@ -59,6 +59,29 @@ jobs:
           # Create zip for Windows
           zip beginning-windows-amd64.zip beginning-windows-amd64.exe template/
           zip beginning-windows-arm64.zip beginning-windows-arm64.exe template/
+          
+          # List created files
+          echo "Created release archives:"
+          ls -la *.tar.gz *.zip
+          
+          # Verify file sizes
+          echo "File sizes:"
+          du -h *.tar.gz *.zip
+
+      - name: Install oras CLI tool
+        run: |
+          # Install oras CLI tool
+          curl -LO https://github.com/oras-project/oras/releases/latest/download/oras_linux_amd64.tar.gz
+          tar -xzf oras_linux_amd64.tar.gz
+          sudo mv oras /usr/local/bin/
+          
+          # Verify installation
+          oras version
+          echo "oras CLI tool installed successfully"
+          
+          # Check PATH
+          which oras
+          echo "oras location: $(which oras)"
 
       - name: Log in to Container Registry
         uses: docker/login-action@v3
@@ -73,6 +96,8 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/}
           VERSION=${VERSION#v}
           
+          echo "Pushing version: $VERSION to GitHub Container Registry"
+          
           # Push CLI tool as OCI artifact to GitHub Container Registry
           oras push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION \
             --manifest '{"name":"beginning","version":"'$VERSION'","type":"cli"}' \
@@ -83,6 +108,8 @@ jobs:
             beginning-windows-amd64.zip:application/zip \
             beginning-windows-arm64.zip:application/zip
           
+          echo "Successfully pushed version $VERSION"
+          
           # Also push with latest tag
           oras push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
             --manifest '{"name":"beginning","version":"'$VERSION'","type":"cli"}' \
@@ -92,6 +119,8 @@ jobs:
             beginning-darwin-arm64.tar.gz:application/gzip \
             beginning-windows-amd64.zip:application/zip \
             beginning-windows-arm64.zip:application/zip
+          
+          echo "Successfully pushed latest tag"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1

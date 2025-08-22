@@ -15,7 +15,7 @@ A Go microservice built with modern architecture patterns and best practices.
 
 ## 📋 Prerequisites
 
-- Go {{.GoVersion}} or later
+- **Go {{.GoVersion}} or later** (Go 1.24+ recommended for latest features)
 - Docker and Docker Compose (for local development)
 - Make (optional, for using Makefile commands)
 
@@ -33,8 +33,11 @@ go mod download
 # Build the application
 go build -o bin/{{.RepoName}} cmd/{{.RepoName}}/main.go
 
-# Build for production
+# Build for production (Go 1.24+)
 CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/{{.RepoName}} cmd/{{.RepoName}}/main.go
+
+# Build with Go 1.24+ features and optimizations
+go build -ldflags="-s -w -X main.version={{.GoVersion}} -X main.buildTime=$(date -u '+%Y-%m-%d_%H:%M:%S')" -o bin/{{.RepoName}} cmd/{{.RepoName}}/main.go
 ```
 
 ## 🚀 Quick Start
