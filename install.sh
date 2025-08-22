@@ -63,6 +63,14 @@ install_cli() {
     print_status "Installing beginning CLI version $VERSION for $OS-$ARCH..."
     print_status "Registry URL: $url"
     
+    # Debug: Show all variables
+    echo "DEBUG: REPO='$REPO'"
+    echo "DEBUG: VERSION='$VERSION'"
+    echo "DEBUG: registry='$registry'"
+    echo "DEBUG: url='$url'"
+    echo "DEBUG: OS='$OS'"
+    echo "DEBUG: ARCH='$ARCH'"
+    
     # Create temporary directory
     local temp_dir=$(mktemp -d)
     cd "$temp_dir"
@@ -72,12 +80,20 @@ install_cli() {
         print_status "Using oras to download from GitHub Container Registry..."
         print_status "Pulling from: $url"
         
+        # Debug: Show exact URL being used
+        echo "DEBUG: Exact URL: '$url'"
+        echo "DEBUG: URL length: ${#url}"
+        echo "DEBUG: First char: '${url:0:1}'"
+        
         # Verify URL format
         if [[ ! "$url" =~ ^[^/]+/[^:]+:[^/]+$ ]]; then
             print_error "Invalid registry URL format: $url"
             print_error "Expected format: registry/repository:tag"
+            print_error "Regex test failed"
             exit 1
         fi
+        
+        print_status "URL format validation passed"
         
         # Try to pull from registry
         if ! oras pull "$url" --output .; then
