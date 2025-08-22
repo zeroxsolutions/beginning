@@ -160,10 +160,28 @@ jobs:
           
           echo "Successfully pushed latest tag"
           
-          # List pushed artifacts
-          echo "Listing artifacts in registry:"
-          oras list ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION
-          oras list ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          # Verify pushed artifacts (using compatible commands)
+          echo "Verifying pushed artifacts..."
+          echo "Successfully pushed to:"
+          echo "  - ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION"
+          echo "  - ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          
+          # Show oras help to see available commands
+          echo "Available oras commands:"
+          oras --help | head -10
+          
+          # Test pull to verify push was successful
+          echo "Testing pull to verify artifacts..."
+          mkdir -p test-pull
+          cd test-pull
+          
+          # Try to pull one artifact to verify it's accessible
+          oras pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION --output .
+          echo "Successfully pulled artifacts from version $VERSION"
+          
+          # Clean up test directory
+          cd ..
+          rm -rf test-pull
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
