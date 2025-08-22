@@ -85,7 +85,7 @@ Examples:
 	scaffoldCmd.Flags().StringVarP(&valuesFile, "values", "v", "values.yaml", "Path to values.yaml configuration file (optional if using CLI flags)")
 	scaffoldCmd.Flags().StringVarP(&moduleName, "module", "m", "", "Go module name (e.g., github.com/company/project)")
 	scaffoldCmd.Flags().StringVarP(&repoName, "repo", "r", "", "Repository/project name (used for directory naming)")
-	scaffoldCmd.Flags().StringVarP(&goVersion, "go-version", "g", "", "Go version to use (defaults to 1.21 if not specified)")
+	scaffoldCmd.Flags().StringVarP(&goVersion, "go-version", "g", "1.24", "Go version to use (defaults to 1.24 if not specified)")
 	scaffoldCmd.Flags().StringVarP(&outputDir, "output", "o", "", "Output directory path (defaults to ./{repo-name})")
 	scaffoldCmd.Flags().StringVarP(&templateType, "type", "t", "service", "Template type to use (service, library, etc.)")
 
