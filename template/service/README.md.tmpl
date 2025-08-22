@@ -1,1 +1,339 @@
 # {{.RepoName}}
+
+A Go microservice built with modern architecture patterns and best practices.
+
+## 🚀 Features
+
+- **RESTful API**: Clean and well-structured HTTP endpoints
+- **Configuration Management**: Environment-based configuration
+- **Database Integration**: Ready-to-use database setup
+- **Swagger Documentation**: Auto-generated API documentation
+- **Testing**: Comprehensive test suite with examples
+- **Dependency Injection**: Using Wire for clean dependency management
+- **Logging**: Structured logging with configurable levels
+- **Health Checks**: Built-in health check endpoints
+
+## 📋 Prerequisites
+
+- Go {{.GoVersion}} or later
+- Docker and Docker Compose (for local development)
+- Make (optional, for using Makefile commands)
+
+## 🛠️ Installation
+
+### From Source
+```bash
+git clone <repository-url>
+cd {{.RepoName}}
+go mod download
+```
+
+### Build
+```bash
+# Build the application
+go build -o bin/{{.RepoName}} cmd/{{.RepoName}}/main.go
+
+# Build for production
+CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/{{.RepoName}} cmd/{{.RepoName}}/main.go
+```
+
+## 🚀 Quick Start
+
+### Development Mode
+```bash
+# Run with default configuration
+go run cmd/{{.RepoName}}/main.go run
+
+# Run with custom config file
+go run cmd/{{.RepoName}}/main.go run --config config/config.yaml
+
+# Run with environment variables
+CONFIG_PATH=config/config.yaml go run cmd/{{.RepoName}}/main.go run
+```
+
+### Production Mode
+```bash
+# Run the built binary
+./bin/{{.RepoName}} run --config config/config.yaml
+
+# Run with environment overrides
+SERVER_ADDR="0.0.0.0:8080" DATABASE_URI="postgres://user:pass@localhost:5432/{{.RepoName}}" ./bin/{{.RepoName}} run --config config/config.yaml
+```
+
+## 🧪 Testing
+
+### Run All Tests
+```bash
+go test ./...
+```
+
+### Run Tests with Coverage
+```bash
+go test -cover ./...
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+```
+
+### Run Specific Test
+```bash
+# Run tests in specific package
+go test ./internal/handlers
+
+# Run specific test function
+go test -run TestCreateUser ./internal/handlers
+```
+
+### Integration Tests
+```bash
+# Run integration tests (requires database)
+go test -tags=integration ./...
+
+# Run with test database
+TEST_DB_URL="postgres://test:test@localhost:5432/test_db" go test -tags=integration ./...
+```
+
+### Run the Service for Testing
+```bash
+# Start the service for manual testing
+go run cmd/{{.RepoName}}/main.go run --config config/config.yaml
+```
+
+## ⚙️ Configuration
+
+### Configuration File
+The service uses a YAML configuration file. See `config/config.yaml` for the default configuration.
+
+### Environment Variables
+You can override configuration values using environment variables:
+
+```bash
+# Server configuration
+export SERVER_DEBUG=true
+export SERVER_ADDR="0.0.0.0:8080"
+export SERVER_ALLOWED_ORIGINS="http://localhost:3000,https://example.com"
+export SERVER_ALLOWED_METHODS="GET,POST,PUT,DELETE,OPTIONS"
+export SERVER_ALLOWED_HEADERS="Content-Type,Authorization,X-Requested-With"
+export SERVER_ALLOW_CREDENTIALS=true
+export SERVER_MAX_AGE="1h"
+
+# Database configuration
+export DATABASE_DEBUG=true
+export DATABASE_URI="postgres://username:password@localhost:5432/{{.RepoName}}?sslmode=disable"
+export DATABASE_POOL_ENABLED=true
+export DATABASE_POOL_MAX_IDLE_CONNS=20
+export DATABASE_POOL_MAX_OPEN_CONNS=200
+export DATABASE_POOL_CONN_MAX_LIFETIME=3600
+```
+
+### Configuration Structure
+```yaml
+server:
+  debug: false
+  addr: "0.0.0.0:8080"
+  allowedOrigins: ["*"]
+  allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  allowedHeaders: ["Content-Type", "Authorization"]
+  allowCredentials: true
+  maxAge: "1h"
+
+database:
+  debug: false
+  uri: "postgres://username:password@localhost:5432/{{.RepoName}}?sslmode=disable"
+  pool:
+    enabled: false
+    maxIdleConns: 10
+    maxOpenConns: 100
+    connMaxLifetime: 0
+```
+
+## 🗄️ Database
+
+### Setup Database
+```bash
+# Using Docker Compose
+docker-compose up -d postgres
+
+# Or manually create database
+createdb {{.RepoName}}
+
+# Set database URI environment variable
+export DATABASE_URI="postgres://postgres:password@localhost:5432/{{.RepoName}}?sslmode=disable"
+```
+
+### Run Migrations
+```bash
+# Run migrations
+go run cmd/{{.RepoName}}/main.go migrate --config config/config.yaml
+
+# Rollback migrations
+go run cmd/{{.RepoName}}/main.go migrate --rollback --config config/config.yaml
+```
+
+## 📚 API Documentation
+
+### Swagger UI
+Once the service is running, visit:
+- Swagger UI: `http://localhost:8080/swagger/index.html`
+- API Docs: `http://localhost:8080/api/docs`
+
+### Generate Swagger Docs
+```bash
+# Install swag
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Generate docs
+swag init -g cmd/{{.RepoName}}/main.go
+```
+
+## 🐳 Docker
+
+### Build Docker Image
+```bash
+docker build -t {{.RepoName}}:latest .
+```
+
+### Run with Docker
+```bash
+docker run -p 8080:8080 \
+  -e SERVER_ADDR="0.0.0.0:8080" \
+  -e SERVER_DEBUG=false \
+  -e DATABASE_URI="postgres://postgres:password@host.docker.internal:5432/{{.RepoName}}?sslmode=disable" \
+  -e DATABASE_DEBUG=false \
+  -e DATABASE_POOL_ENABLED=true \
+  {{.RepoName}}:latest
+```
+
+### Docker Compose
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f {{.RepoName}}
+
+# Stop all services
+docker-compose down
+```
+
+## 📁 Project Structure
+
+```
+{{.RepoName}}/
+├── cmd/                    # Application entry points
+│   └── {{.RepoName}}/     # Main application
+├── internal/               # Private application code
+│   ├── config/            # Configuration management
+│   ├── database/          # Database operations
+│   ├── handlers/          # HTTP handlers
+│   ├── middleware/        # HTTP middleware
+│   ├── models/            # Data models
+│   ├── repository/        # Data access layer
+│   └── service/           # Business logic
+├── pkg/                   # Public packages
+├── config/                # Configuration files
+├── migrations/            # Database migrations
+├── docs/                  # Generated documentation
+├── scripts/               # Build and deployment scripts
+└── bin/                   # Build artifacts
+```
+
+## 🔧 Development
+
+### Code Generation
+```bash
+# Generate Wire dependency injection code
+go generate ./...
+
+# Generate mock interfaces
+mockgen -source=internal/service/service.go -destination=internal/service/mock_service.go
+```
+
+### Linting and Formatting
+```bash
+# Format code
+go fmt ./...
+
+# Run linter
+golangci-lint run
+
+# Run linter with auto-fix
+golangci-lint run --fix
+```
+
+### Pre-commit Hooks
+```bash
+# Install pre-commit hooks
+pre-commit install
+
+# Run all hooks
+pre-commit run --all-files
+```
+
+## 🚀 Deployment
+
+### Build for Production
+```bash
+# Build binary
+make build
+
+# Build Docker image
+make docker-build
+
+# Push to registry
+make docker-push
+```
+
+### Environment Setup
+```bash
+# Copy example config
+cp config/config.yaml.example config/config.yaml
+
+# Edit configuration
+vim config/config.yaml
+
+# Set environment variables
+source .env
+```
+
+## 📊 Monitoring
+
+### Health Check
+```bash
+curl http://localhost:8080/health
+```
+
+### Metrics
+```bash
+curl http://localhost:8080/metrics
+```
+
+### Logs
+```bash
+# View application logs
+tail -f logs/{{.RepoName}}.log
+
+# View Docker logs
+docker logs -f {{.RepoName}}
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- **Issues**: Create an issue on GitHub
+- **Documentation**: Check this README and help commands
+- **Examples**: See the examples in the `examples/` directory
+
+---
+
+**Happy Coding! 🎉**

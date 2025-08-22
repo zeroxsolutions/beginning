@@ -13,6 +13,32 @@ A powerful CLI tool designed to scaffold Go projects from predefined templates w
 
 ## 📦 Installation
 
+### Quick Install (Recommended)
+```bash
+# Install latest version
+curl -fsSL https://raw.githubusercontent.com/zeroxsolutions/beginning/main/install.sh | bash
+
+# Install specific version
+curl -fsSL https://raw.githubusercontent.com/zeroxsolutions/beginning/main/install.sh | bash -s -- -v v0.0.1
+```
+
+### From GitHub Container Registry
+```bash
+# Install oras CLI tool first
+# macOS
+brew install oras
+
+# Linux
+curl -LO https://github.com/oras-project/oras/releases/latest/download/oras_linux_amd64.tar.gz
+tar -xzf oras_linux_amd64.tar.gz
+sudo mv oras /usr/local/bin/
+
+# Download and install from GitHub Container Registry
+oras pull ghcr.io/zeroxsolutions/beginning:latest --output .
+chmod +x beginning-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)
+sudo mv beginning-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m) /usr/local/bin/beginning
+```
+
 ### From Source
 ```bash
 git clone <repository-url>
@@ -158,6 +184,20 @@ beginning create -t service
 ```bash
 beginning create -t service -r custom-name -m github.com/company/custom
 ```
+
+## 🚀 Releases
+
+### Versioning
+We use semantic versioning (SemVer) for releases:
+- Format: `vX.Y.Z` (e.g., `v0.0.1`, `v1.0.0`)
+- Latest version: `ghcr.io/zeroxsolutions/beginning:latest`
+- Specific version: `ghcr.io/zeroxsolutions/beginning:v0.0.1`
+
+### Release Process
+1. Create and push a new tag: `git tag v0.0.1 && git push origin v0.0.1`
+2. GitHub Actions automatically builds and publishes to GitHub Container Registry
+3. Binary files are available for all supported platforms
+4. GitHub Release is created with downloadable assets
 
 ## 🛠️ Development
 
