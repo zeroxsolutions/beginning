@@ -86,24 +86,60 @@ install_cli() {
         # Alternative: download from GitHub releases
         local release_url="https://github.com/$REPO/releases/download/$VERSION"
         
-        # First, check if the release exists
+        # First, check if the release exists and get available releases
         print_status "Checking release availability..."
-        if ! curl -s -f "$release_url" > /dev/null 2>&1; then
-            print_error "Release $VERSION not found. Available releases:"
-            curl -s "https://api.github.com/repos/$REPO/releases" | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/' | head -5
+        local available_releases=$(curl -s "https://api.github.com/repos/$REPO/releases" | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/')
+        
+        if [ -z "$available_releases" ]; then
+            print_error "No releases found. This might be a new repository."
+            print_status "Try building from source instead:"
+            echo "  git clone https://github.com/$REPO.git"
+            echo "  cd beginning && go build -o beginning main.go"
             exit 1
+        fi
+        
+        print_status "Available releases:"
+        echo "$available_releases" | head -5
+        
+        # Check if requested version exists
+        if ! echo "$available_releases" | grep -q "^$VERSION$"; then
+            print_error "Release $VERSION not found."
+            print_status "Using latest available release instead..."
+            VERSION=$(echo "$available_releases" | head -1)
+            print_status "Switched to version: $VERSION"
         fi
         
         if [ "$OS" = "windows" ]; then
             local file="beginning-$OS-$ARCH.zip"
             print_status "Downloading $file from GitHub releases..."
-            curl -L -o "$file" "$release_url/$file"
+            print_status "URL: $release_url/$file"
+            
+            # Download with better error handling
+            if ! curl -L -f -o "$file" "$release_url/$file"; then
+                print_error "Failed to download $file"
+                print_status "Trying alternative download method..."
+                
+                # Try direct download from releases page
+                local alt_url="https://github.com/$REPO/releases/latest/download/$file"
+                print_status "Trying: $alt_url"
+                curl -L -f -o "$file" "$alt_url"
+            fi
             
             # Verify download
-            if [ ! -s "$file" ] || [ "$(file "$file" | grep -c 'Zip archive')" -eq 0 ]; then
-                print_error "Failed to download valid zip file. File info:"
+            if [ ! -s "$file" ]; then
+                print_error "Downloaded file is empty"
                 ls -la "$file"
+                exit 1
+            fi
+            
+            if [ "$(file "$file" | grep -c 'Zip archive')" -eq 0 ]; then
+                print_error "Downloaded file is not a valid zip archive"
+                print_status "File content (first 100 chars):"
+                head -c 100 "$file"
+                echo
+                print_status "File info:"
                 file "$file"
+                ls -la "$file"
                 exit 1
             fi
             
@@ -112,13 +148,34 @@ install_cli() {
         else
             local file="beginning-$OS-$ARCH.tar.gz"
             print_status "Downloading $file from GitHub releases..."
-            curl -L -o "$file" "$release_url/$file"
+            print_status "URL: $release_url/$file"
+            
+            # Download with better error handling
+            if ! curl -L -f -o "$file" "$release_url/$file"; then
+                print_error "Failed to download $file"
+                print_status "Trying alternative download method..."
+                
+                # Try direct download from releases page
+                local alt_url="https://github.com/$REPO/releases/latest/download/$file"
+                print_status "Trying: $alt_url"
+                curl -L -f -o "$file" "$alt_url"
+            fi
             
             # Verify download
-            if [ ! -s "$file" ] || [ "$(file "$file" | grep -c 'gzip compressed data')" -eq 0 ]; then
-                print_error "Failed to download valid tar.gz file. File info:"
+            if [ ! -s "$file" ]; then
+                print_error "Downloaded file is empty"
                 ls -la "$file"
+                exit 1
+            fi
+            
+            if [ "$(file "$file" | grep -c 'gzip compressed data')" -eq 0 ]; then
+                print_error "Downloaded file is not a valid tar.gz archive"
+                print_status "File content (first 100 chars):"
+                head -c 100 "$file"
+                echo
+                print_status "File info:"
                 file "$file"
+                ls -la "$file"
                 exit 1
             fi
             
