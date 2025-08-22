@@ -70,17 +70,59 @@ install_cli() {
     if command -v oras &> /dev/null; then
         print_status "Using oras to download from GitHub Container Registry..."
         oras pull "$url" --output .
+    elif command -v go &> /dev/null; then
+        print_status "Installing oras CLI tool via Go..."
+        go install oras.land/oras/cmd/oras@latest
+        export PATH="$(go env GOPATH)/bin:$PATH"
+        
+        if command -v oras &> /dev/null; then
+            print_status "Using oras to download from GitHub Container Registry..."
+            oras pull "$url" --output .
+        else
+            print_warning "Failed to install oras, falling back to GitHub releases..."
+        fi
     else
         print_warning "oras not found, trying alternative download method..."
         # Alternative: download from GitHub releases
         local release_url="https://github.com/$REPO/releases/download/$VERSION"
+        
+        # First, check if the release exists
+        print_status "Checking release availability..."
+        if ! curl -s -f "$release_url" > /dev/null 2>&1; then
+            print_error "Release $VERSION not found. Available releases:"
+            curl -s "https://api.github.com/repos/$REPO/releases" | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/' | head -5
+            exit 1
+        fi
+        
         if [ "$OS" = "windows" ]; then
             local file="beginning-$OS-$ARCH.zip"
+            print_status "Downloading $file from GitHub releases..."
             curl -L -o "$file" "$release_url/$file"
+            
+            # Verify download
+            if [ ! -s "$file" ] || [ "$(file "$file" | grep -c 'Zip archive')" -eq 0 ]; then
+                print_error "Failed to download valid zip file. File info:"
+                ls -la "$file"
+                file "$file"
+                exit 1
+            fi
+            
+            print_status "Extracting $file..."
             unzip "$file"
         else
             local file="beginning-$OS-$ARCH.tar.gz"
+            print_status "Downloading $file from GitHub releases..."
             curl -L -o "$file" "$release_url/$file"
+            
+            # Verify download
+            if [ ! -s "$file" ] || [ "$(file "$file" | grep -c 'gzip compressed data')" -eq 0 ]; then
+                print_error "Failed to download valid tar.gz file. File info:"
+                ls -la "$file"
+                file "$file"
+                exit 1
+            fi
+            
+            print_status "Extracting $file..."
             tar -xzf "$file"
         fi
     fi
@@ -181,6 +223,18 @@ main() {
     install_cli
     
     print_success "You can now use 'beginning --help' to see available commands"
+    
+    # Suggest installing oras for better experience
+    if ! command -v oras &> /dev/null; then
+        print_status "For better installation experience, consider installing oras CLI tool:"
+        if command -v go &> /dev/null; then
+            echo "  go install oras.land/oras/cmd/oras@latest"
+        elif command -v brew &> /dev/null; then
+            echo "  brew install oras"
+        else
+            echo "  Visit: https://oras.land/cli/"
+        fi
+    fi
 }
 
 # Run main function

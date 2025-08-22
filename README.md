@@ -14,13 +14,15 @@ A powerful CLI tool designed to scaffold Go projects from predefined templates w
 
 ## 📦 Installation
 
+> **Note**: This repository uses the `master` branch. Make sure to use `master` instead of `main` in URLs.
+
 ### Quick Install (Recommended)
 ```bash
 # Install latest version
-curl -fsSL https://raw.githubusercontent.com/zeroxsolutions/beginning/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/zeroxsolutions/beginning/master/install.sh | bash
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/zeroxsolutions/beginning/main/install.sh | bash -s -- -v v0.0.1
+curl -fsSL https://raw.githubusercontent.com/zeroxsolutions/beginning/master/install.sh | bash -s -- -v v0.0.1
 ```
 
 ### From GitHub Container Registry
@@ -246,6 +248,18 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - **Issues**: Create an issue on GitHub
 - **Documentation**: Check this README and help commands
 - **Examples**: See the examples section above
+
+## 🔧 Troubleshooting
+
+### Installation Issues
+- **404 Error**: Make sure you're using the correct branch (`master`, not `main`)
+- **Permission Denied**: Use `sudo` or install to user directory with `~/bin`
+- **Command Not Found**: Add the installation directory to your PATH
+
+### Common Problems
+- **Wrong Branch**: Repository uses `master` branch, not `main`
+- **Path Issues**: Ensure the binary is in your PATH
+- **Version Mismatch**: Check Go version compatibility (Go 1.24+ recommended)
 
 ---
 
