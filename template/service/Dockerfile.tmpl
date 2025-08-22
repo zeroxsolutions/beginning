@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 
-# Base image with Go 1.18 and Debian Bullseye
+# Base image with Go {{.GoVersion}} and Debian Bullseye
 # This image provides the Go runtime and development tools
-FROM golang:1.18-bullseye AS base
+FROM golang:{{.GoVersion}}-bullseye AS base
 
 # Builder stage for compiling the application
 # This stage contains all build dependencies and compiles the Go code

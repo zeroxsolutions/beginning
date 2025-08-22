@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	_ "github.com/test/testservice/docs"
-	"github.com/test/testservice/internal/config"
-	"github.com/test/testservice/internal/entrypoints/httpd/router"
+	_ "{{.ModuleName}}/docs"
+	"{{.ModuleName}}/internal/config"
+	"{{.ModuleName}}/internal/entrypoints/httpd/router"
 	"github.com/zeroxsolutions/sazabi"
 )
 

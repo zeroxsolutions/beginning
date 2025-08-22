@@ -52,7 +52,7 @@ func init() {
 	rootCmd.Root().CompletionOptions.DisableDefaultCmd = true
 
 	// Run
-	runCmd.Flags().StringSliceVarP(&configFilePaths, "config", "c", []string{"config.yml"}, "config file path")
+	runCmd.Flags().StringSliceVarP(&configFilePaths, "config", "c", []string{"config.yaml"}, "config file path")
 
 	for _, cmd := range []*cobra.Command{&runCmd} {
 		rootCmd.AddCommand(cmd)

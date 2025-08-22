@@ -190,6 +190,12 @@ func runScaffold(cmd *cobra.Command, args []string) {
 		check(err)
 
 		if filepath.Ext(path) == ".tmpl" {
+			// Special handling for gitignore.tmpl -> .gitignore
+			if strings.HasSuffix(path, "gitignore.tmpl") {
+				gitignorePath := filepath.Join(filepath.Dir(targetPath), ".gitignore")
+				return renderTemplateBytes(data, gitignorePath, values)
+			}
+			// Regular template files: remove .tmpl extension
 			return renderTemplateBytes(data, targetPath[:len(targetPath)-5], values)
 		} else {
 			return os.WriteFile(targetPath, data, 0644)
@@ -264,8 +270,14 @@ func loadValues() Values {
 		os.Exit(1)
 	}
 	if values.GoVersion == "" {
-		values.GoVersion = "1.21" // Default Go version
+		values.GoVersion = "1.24" // Default Go version
 		fmt.Printf("ℹ️  Using default Go version: %s\n", values.GoVersion)
+	}
+
+	// Validate minimum Go version
+	if !isValidGoVersion(values.GoVersion) {
+		fmt.Printf("❌ Go version %s is below minimum required version 1.24\n", values.GoVersion)
+		os.Exit(1)
 	}
 
 	return values
@@ -320,4 +332,36 @@ func templateTypeExists(templateType string) bool {
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+func isValidGoVersion(version string) bool {
+	// Parse version string (e.g., "1.24", "1.25", "1.24.1")
+	parts := strings.Split(version, ".")
+	if len(parts) < 2 {
+		return false
+	}
+
+	major, err := parseVersionPart(parts[0])
+	if err != nil {
+		return false
+	}
+
+	minor, err := parseVersionPart(parts[1])
+	if err != nil {
+		return false
+	}
+
+	// Check if version is >= 1.24
+	return major > 1 || (major == 1 && minor >= 24)
+}
+
+func parseVersionPart(part string) (int, error) {
+	// Remove any non-numeric suffix
+	cleanPart := strings.TrimRightFunc(part, func(r rune) bool {
+		return r < '0' || r > '9'
+	})
+
+	var result int
+	_, err := fmt.Sscanf(cleanPart, "%d", &result)
+	return result, err
 }

@@ -1,0 +1,16 @@
+server:
+  debug: true
+  addr: "0.0.0.0:3000"
+  allowedOrigins: ["*"]
+  allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  allowedHeaders: ["Content-Type", "Authorization"]
+  allowCredentials: true
+  maxAge: "1h"
+database:
+  uri: "***"
+  debug: true
+  pool:
+    enabled: true
+    maxIdleConns: 10
+    maxOpenConns: 100
+    connMaxLifetime: 0
