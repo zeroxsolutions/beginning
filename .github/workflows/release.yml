@@ -70,9 +70,26 @@ jobs:
 
       - name: Install oras CLI tool
         run: |
-          # Install oras CLI tool
-          curl -LO https://github.com/oras-project/oras/releases/latest/download/oras_linux_amd64.tar.gz
-          tar -xzf oras_linux_amd64.tar.gz
+          # Install oras CLI tool using official method
+          echo "Installing oras CLI tool..."
+          
+          # Method 1: Try downloading from GitHub releases
+          echo "Method 1: Downloading from GitHub releases..."
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/oras-project/oras/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "Latest oras version: $LATEST_VERSION"
+          
+          # Download and install
+          curl -L -o oras.tar.gz "https://github.com/oras-project/oras/releases/download/${LATEST_VERSION}/oras_linux_amd64.tar.gz"
+          
+          # Verify download
+          ls -la oras.tar.gz
+          file oras.tar.gz
+          
+          # Extract
+          tar -xzf oras.tar.gz
+          ls -la
+          
+          # Install
           sudo mv oras /usr/local/bin/
           
           # Verify installation
@@ -82,6 +99,23 @@ jobs:
           # Check PATH
           which oras
           echo "oras location: $(which oras)"
+          
+          # Method 2: Fallback to Go install if Method 1 fails
+          if ! command -v oras &> /dev/null; then
+            echo "Method 1 failed, trying Method 2: Go install..."
+            go install oras.land/oras/cmd/oras@latest
+            echo "oras installed via Go: $(which oras)"
+          fi
+          
+          # Final verification
+          echo "Final oras verification:"
+          oras version
+          echo "oras location: $(which oras)"
+          echo "oras PATH: $PATH"
+          
+          # Test oras functionality
+          echo "Testing oras functionality..."
+          oras --help | head -5
 
       - name: Log in to Container Registry
         uses: docker/login-action@v3
