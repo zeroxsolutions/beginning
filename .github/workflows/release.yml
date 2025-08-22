@@ -113,10 +113,32 @@ jobs:
           VERSION=${VERSION#v}
           
           echo "Pushing version: $VERSION to GitHub Container Registry"
+          echo "Using oras version: $(oras version)"
           
-          # Push CLI tool as OCI artifact to GitHub Container Registry
+          # Create a simple manifest file
+          cat > manifest.json << EOF
+          {
+            "name": "beginning",
+            "version": "$VERSION",
+            "type": "cli",
+            "description": "Go project scaffolder CLI tool",
+            "platforms": [
+              "linux-amd64",
+              "linux-arm64", 
+              "darwin-amd64",
+              "darwin-arm64",
+              "windows-amd64",
+              "windows-arm64"
+            ]
+          }
+          EOF
+          
+          echo "Created manifest:"
+          cat manifest.json
+          
+          # Push CLI tool as OCI artifact to GitHub Container Registry (without --manifest flag)
+          echo "Pushing version $VERSION..."
           oras push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION \
-            --manifest '{"name":"beginning","version":"'$VERSION'","type":"cli"}' \
             beginning-linux-amd64.tar.gz:application/gzip \
             beginning-linux-arm64.tar.gz:application/gzip \
             beginning-darwin-amd64.tar.gz:application/gzip \
@@ -127,8 +149,8 @@ jobs:
           echo "Successfully pushed version $VERSION"
           
           # Also push with latest tag
+          echo "Pushing latest tag..."
           oras push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            --manifest '{"name":"beginning","version":"'$VERSION'","type":"cli"}' \
             beginning-linux-amd64.tar.gz:application/gzip \
             beginning-linux-arm64.tar.gz:application/gzip \
             beginning-darwin-amd64.tar.gz:application/gzip \
@@ -137,6 +159,11 @@ jobs:
             beginning-windows-arm64.zip:application/zip
           
           echo "Successfully pushed latest tag"
+          
+          # List pushed artifacts
+          echo "Listing artifacts in registry:"
+          oras list ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION
+          oras list ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
