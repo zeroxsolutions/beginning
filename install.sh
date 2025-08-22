@@ -65,43 +65,30 @@ install_from_github_releases() {
     # Alternative: download from GitHub releases
     local release_url="https://github.com/$REPO/releases/download/$VERSION"
     
-    # First, check if the release exists and get available releases
-    print_status "Checking release availability..."
+    # Get available releases and use the best match
+    print_status "Checking available releases..."
     local available_releases=$(curl -s "https://api.github.com/repos/$REPO/releases" | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/')
     
     if [ -z "$available_releases" ]; then
-        print_error "No releases found. This might be a new repository."
-        print_status "Try building from source instead:"
-        echo "  git clone https://github.com/$REPO.git"
-        echo "  cd beginning && go build -o beginning main.go"
+        print_error "No releases found. Try building from source:"
+        echo "  git clone https://github.com/$REPO.git && cd beginning && go build -o beginning main.go"
         exit 1
     fi
     
-    print_status "Available releases:"
-    echo "$available_releases" | head -5
-    
-    # Check if requested version exists
+    # Use latest available release if requested version doesn't exist
     if ! echo "$available_releases" | grep -q "^$VERSION$"; then
-        print_error "Release $VERSION not found."
-        print_status "Using latest available release instead..."
         VERSION=$(echo "$available_releases" | head -1)
-        print_status "Switched to version: $VERSION"
+        print_status "Using latest release: $VERSION"
     fi
     
     if [ "$OS" = "windows" ]; then
         local file="beginning-$OS-$ARCH.zip"
-        print_status "Downloading $file from GitHub releases..."
-        print_status "URL: $release_url/$file"
+        print_status "Downloading $file..."
         
-        # Download with better error handling
+        # Download file
         if ! curl -L -f -o "$file" "$release_url/$file"; then
             print_error "Failed to download $file"
-            print_status "Trying alternative download method..."
-            
-            # Try direct download from releases page
-            local alt_url="https://github.com/$REPO/releases/latest/download/$file"
-            print_status "Trying: $alt_url"
-            curl -L -f -o "$file" "$alt_url"
+            exit 1
         fi
         
         # Verify download
@@ -126,18 +113,12 @@ install_from_github_releases() {
         unzip "$file"
     else
         local file="beginning-$OS-$ARCH.tar.gz"
-        print_status "Downloading $file from GitHub releases..."
-        print_status "URL: $release_url/$file"
+        print_status "Downloading $file..."
         
-        # Download with better error handling
+        # Download file
         if ! curl -L -f -o "$file" "$release_url/$file"; then
             print_error "Failed to download $file"
-            print_status "Trying alternative download method..."
-            
-            # Try direct download from releases page
-            local alt_url="https://github.com/$REPO/releases/latest/download/$file"
-            print_status "Trying: $alt_url"
-            curl -L -f -o "$file" "$alt_url"
+            exit 1
         fi
         
         # Verify download
@@ -222,13 +203,10 @@ install_cli() {
     print_status "Installing beginning CLI version $VERSION for $OS-$ARCH..."
     print_status "Registry URL: $url"
     
-    # Debug: Show all variables
-    echo "DEBUG: REPO='$REPO'"
-    echo "DEBUG: VERSION='$VERSION'"
-    echo "DEBUG: registry='$registry'"
-    echo "DEBUG: url='$url'"
-    echo "DEBUG: OS='$OS'"
-    echo "DEBUG: ARCH='$ARCH'"
+    # Show installation info
+    print_status "Repository: $REPO"
+    print_status "Version: $VERSION"
+    print_status "Platform: $OS-$ARCH"
     
     # Create temporary directory
     local temp_dir=$(mktemp -d)
@@ -239,20 +217,11 @@ install_cli() {
         print_status "Using oras to download from GitHub Container Registry..."
         print_status "Pulling from: $url"
         
-        # Debug: Show exact URL being used
-        echo "DEBUG: Exact URL: '$url'"
-        echo "DEBUG: URL length: ${#url}"
-        echo "DEBUG: First char: '${url:0:1}'"
-        
         # Verify URL format
         if [[ ! "$url" =~ ^[^/]+/[^:]+:[^/]+$ ]]; then
             print_error "Invalid registry URL format: $url"
-            print_error "Expected format: registry/repository:tag"
-            print_error "Regex test failed"
             exit 1
         fi
-        
-        print_status "URL format validation passed"
         
         # Try to pull from registry
         print_status "Attempting to pull from registry (may require authentication)..."
