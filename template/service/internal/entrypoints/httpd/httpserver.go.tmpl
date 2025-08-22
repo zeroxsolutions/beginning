@@ -5,11 +5,12 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	_ "{{.ModuleName}}/docs"
-	"{{.ModuleName}}/internal/config"
-	"{{.ModuleName}}/internal/entrypoints/httpd/router"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "github.com/test/testservice/docs"
+	"github.com/test/testservice/internal/config"
+	"github.com/test/testservice/internal/entrypoints/httpd/router"
+	"github.com/zeroxsolutions/sazabi"
 )
 
 // @BasePath /
@@ -31,7 +32,11 @@ func NewHTTPServer(
 	corsConfig.AllowMethods = appConfig.Server.AllowedMethods
 	corsConfig.AllowHeaders = appConfig.Server.AllowedHeaders
 	corsConfig.AllowCredentials = appConfig.Server.AllowCredentials
-	corsConfig.MaxAge = time.Duration(appConfig.Server.MaxHeaderBytes) * time.Second
+	maxAge, err := time.ParseDuration(appConfig.Server.MaxAge)
+	if err != nil {
+		sazabi.Fatalf("failed to parse max age: %v", err)
+	}
+	corsConfig.MaxAge = maxAge
 	ginDefault.Use(cors.New(corsConfig))
 	ginDefault.Use(gin.Recovery())
 	ginDefault.Use(gin.Logger())
