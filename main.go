@@ -558,6 +558,13 @@ fpath=(%s $fpath)
 autoload -U compinit && compinit
 `, completionDir)
 
+	// Check if content already exists to avoid duplicates
+	existingData, err := os.ReadFile(zshrcFile)
+	if err == nil && strings.Contains(string(existingData), "beginning CLI completion") {
+		fmt.Println("ℹ️  .zshrc already contains beginning completion configuration")
+		return
+	}
+
 	// Append to .zshrc
 	f, err := os.OpenFile(zshrcFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err == nil {
