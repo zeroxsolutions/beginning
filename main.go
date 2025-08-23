@@ -300,13 +300,13 @@ func runScaffold(cmd *cobra.Command, args []string) {
 	check(os.Chdir(outputDir))
 
 	// Run post-scaffold commands (only if they exist)
+	if fileExists("go.mod") {
+		runCommand("go mod tidy")
+	}
+
 	if fileExists("bin/swagger.sh") {
 		runCommand("chmod +x bin/*")
 		runCommand("./bin/swagger.sh")
-	}
-
-	if fileExists("go.mod") {
-		runCommand("go mod tidy")
 	}
 
 	if fileExists("bin/wire.sh") {
