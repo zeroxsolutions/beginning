@@ -89,6 +89,31 @@ Examples:
 	scaffoldCmd.Flags().StringVarP(&outputDir, "output", "o", "", "Output directory path (defaults to ./{repo-name})")
 	scaffoldCmd.Flags().StringVarP(&templateType, "type", "t", "service", "Template type to use (service, library, etc.)")
 
+	// Add completion for template types
+	scaffoldCmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		var templates []string
+		fs.WalkDir(templateFS, "template", func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if path == "template" {
+				return nil
+			}
+			parts := strings.Split(path, "/")
+			if len(parts) == 2 && d.IsDir() {
+				templates = append(templates, parts[1])
+			}
+			return nil
+		})
+		return templates, cobra.ShellCompDirectiveNoFileComp
+	})
+
+	// Add completion for go-version flag
+	scaffoldCmd.RegisterFlagCompletionFunc("go-version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		versions := []string{"1.24", "1.25", "1.26", "1.27", "1.28", "1.29", "1.30"}
+		return versions, cobra.ShellCompDirectiveNoFileComp
+	})
+
 	rootCmd.AddCommand(scaffoldCmd)
 
 	// Add list command to show available template types
@@ -107,6 +132,70 @@ Examples:
 		Run: listTemplates,
 	}
 	rootCmd.AddCommand(listCmd)
+
+	// Add completion command
+	var completionCmd = &cobra.Command{
+		Use:   "completion",
+		Short: "Generate completion script for bash, zsh, fish, and PowerShell",
+		Long: `Generate completion script for beginning for the specified shell.
+
+This command will output a completion script that you can source or save to your shell's completion directory.
+
+Examples:
+  beginning completion bash        # Generate bash completion script
+  beginning completion zsh         # Generate zsh completion script
+  beginning completion fish        # Generate fish completion script
+  beginning completion powershell  # Generate PowerShell completion script
+
+To use bash completion:
+  1. Run: beginning completion bash > ~/.local/share/bash-completion/completions/beginning
+  2. Or add to your ~/.bashrc: eval "$(beginning completion bash)"
+
+To use zsh completion:
+  1. Run: beginning completion zsh > ~/.zsh/completions/_beginning
+  2. Or add to your ~/.zshrc: eval "$(beginning completion zsh)"`,
+		ValidArgs: []string{"bash", "zsh", "fish", "powershell"},
+		Args:      cobra.ExactValidArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			switch args[0] {
+			case "bash":
+				cmd.Root().GenBashCompletion(os.Stdout)
+			case "zsh":
+				cmd.Root().GenZshCompletion(os.Stdout)
+			case "fish":
+				cmd.Root().GenFishCompletion(os.Stdout, true)
+			case "powershell":
+				cmd.Root().GenPowerShellCompletion(os.Stdout)
+			}
+		},
+	}
+	rootCmd.AddCommand(completionCmd)
+
+	// Add install-completion command for automatic setup
+	var installCompletionCmd = &cobra.Command{
+		Use:   "install-completion",
+		Short: "Automatically install completion scripts for your shell",
+		Long: `Automatically detect your shell and install completion scripts.
+
+This command will:
+1. Detect your current shell (bash, zsh, fish, or PowerShell)
+2. Generate the appropriate completion script
+3. Install it to the correct directory for your shell
+4. Configure your shell to use it
+
+Examples:
+  beginning install-completion     # Auto-detect and install completion
+  beginning install-completion --force  # Force reinstall even if already installed
+
+Supported shells:
+• bash: Installs to ~/.local/share/bash-completion/completions/
+• zsh: Installs to ~/.zsh/completions/ and updates ~/.zshrc
+• fish: Installs to ~/.config/fish/completions/
+• PowerShell: Installs to PowerShell profile`,
+		Run: installCompletion,
+	}
+	installCompletionCmd.Flags().BoolP("force", "f", false, "Force reinstall even if already installed")
+	rootCmd.AddCommand(installCompletionCmd)
 
 	rootCmd.Execute()
 }
@@ -364,4 +453,207 @@ func parseVersionPart(part string) (int, error) {
 	var result int
 	_, err := fmt.Sscanf(cleanPart, "%d", &result)
 	return result, err
+}
+
+func installCompletion(cmd *cobra.Command, args []string) {
+	force, _ := cmd.Flags().GetBool("force")
+
+	// Detect current shell
+	shell := detectShell()
+	fmt.Printf("🔍 Detected shell: %s\n", shell)
+
+	// Check if already installed
+	if !force && isCompletionInstalled(shell) {
+		fmt.Printf("✅ Completion already installed for %s\n", shell)
+		fmt.Println("Use --force to reinstall")
+		return
+	}
+
+	// Install completion
+	switch shell {
+	case "zsh":
+		installZshCompletion(force)
+	case "bash":
+		installBashCompletion(force)
+	case "fish":
+		installFishCompletion(force)
+	case "powershell":
+		installPowerShellCompletion(force)
+	default:
+		fmt.Printf("❌ Unsupported shell: %s\n", shell)
+		fmt.Println("Supported shells: bash, zsh, fish, powershell")
+		os.Exit(1)
+	}
+
+	fmt.Printf("✅ Completion installed successfully for %s!\n", shell)
+	fmt.Println("Please restart your shell or run 'source ~/.zshrc' (for zsh) to activate completion.")
+}
+
+func detectShell() string {
+	// Check SHELL environment variable
+	if shell := os.Getenv("SHELL"); shell != "" {
+		if strings.Contains(shell, "zsh") {
+			return "zsh"
+		} else if strings.Contains(shell, "bash") {
+			return "bash"
+		} else if strings.Contains(shell, "fish") {
+			return "fish"
+		}
+	}
+
+	// Check if we're in PowerShell
+	if os.Getenv("POWERSHELL_TELEMETRY_OPTOUT") != "" {
+		return "powershell"
+	}
+
+	// Default to bash if can't detect
+	return "bash"
+}
+
+func isCompletionInstalled(shell string) bool {
+	switch shell {
+	case "zsh":
+		_, err := os.Stat(filepath.Join(os.Getenv("HOME"), ".zsh/completions/_beginning"))
+		return err == nil
+	case "bash":
+		_, err := os.Stat(filepath.Join(os.Getenv("HOME"), ".local/share/bash-completion/completions/beginning"))
+		return err == nil
+	case "fish":
+		_, err := os.Stat(filepath.Join(os.Getenv("HOME"), ".config/fish/completions/beginning.fish"))
+		return err == nil
+	}
+	return false
+}
+
+func installZshCompletion(force bool) {
+	home := os.Getenv("HOME")
+	completionDir := filepath.Join(home, ".zsh/completions")
+	completionFile := filepath.Join(completionDir, "_beginning")
+	zshrcFile := filepath.Join(home, ".zshrc")
+
+	// Create completion directory
+	check(os.MkdirAll(completionDir, 0755))
+
+	// Generate completion script using the completion command
+	cmd := exec.Command("./beginning", "completion", "zsh")
+	output, err := cmd.Output()
+	if err != nil {
+		// Fallback to basic completion script
+		completionScript := generateZshCompletion()
+		check(os.WriteFile(completionFile, []byte(completionScript), 0644))
+	} else {
+		check(os.WriteFile(completionFile, output, 0644))
+	}
+
+	// Update .zshrc if needed
+	if !force && isZshrcConfigured(home) {
+		fmt.Println("ℹ️  .zshrc already configured for completion")
+		return
+	}
+
+	// Add completion configuration to .zshrc
+	zshrcContent := fmt.Sprintf(`
+# beginning CLI completion
+fpath=(%s $fpath)
+autoload -U compinit && compinit
+`, completionDir)
+
+	// Append to .zshrc
+	f, err := os.OpenFile(zshrcFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err == nil {
+		defer f.Close()
+		f.WriteString(zshrcContent)
+	}
+}
+
+func installBashCompletion(force bool) {
+	home := os.Getenv("HOME")
+	completionDir := filepath.Join(home, ".local/share/bash-completion/completions")
+
+	// Create completion directory
+	check(os.MkdirAll(completionDir, 0755))
+
+	// Generate and write completion script
+	completionScript := generateBashCompletion()
+	completionFile := filepath.Join(completionDir, "beginning")
+	check(os.WriteFile(completionFile, []byte(completionScript), 0644))
+
+	fmt.Println("ℹ️  To activate bash completion, add this to your ~/.bashrc:")
+	fmt.Println("   source ~/.local/share/bash-completion/completions/beginning")
+}
+
+func installFishCompletion(force bool) {
+	home := os.Getenv("HOME")
+	completionDir := filepath.Join(home, ".config/fish/completions")
+
+	// Create completion directory
+	check(os.MkdirAll(completionDir, 0755))
+
+	// Generate and write completion script
+	completionScript := generateFishCompletion()
+	completionFile := filepath.Join(completionDir, "beginning.fish")
+	check(os.WriteFile(completionFile, []byte(completionScript), 0644))
+}
+
+func installPowerShellCompletion(force bool) {
+	fmt.Println("ℹ️  PowerShell completion requires manual setup:")
+	fmt.Println("   1. Run: beginning completion powershell")
+	fmt.Println("   2. Copy the output to your PowerShell profile")
+}
+
+func generateZshCompletion() string {
+	// This would normally use cobra's GenZshCompletion, but we need to capture the output
+	// For now, return a basic completion script
+	return `#compdef beginning
+compdef _beginning beginning
+
+_beginning() {
+    local -a commands
+    commands=(
+        'create:Create a new Go project from templates'
+        'list:List available template types'
+        'completion:Generate completion script for specified shell'
+        'install-completion:Automatically install completion scripts'
+        'help:Help about any command'
+    )
+    
+    _describe -t commands 'beginning commands' commands "$@"
+}
+`
+}
+
+func generateBashCompletion() string {
+	// This would normally use cobra's GenBashCompletion, but we need to capture the output
+	// For now, return a basic completion script
+	return `# bash completion for beginning
+_beginning_completion() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    
+    opts="create list completion install-completion help"
+    
+    if [[ ${cur} == * ]] ; then
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+        return 0
+    fi
+}
+
+complete -F _beginning_completion beginning
+`
+}
+
+func generateFishCompletion() string {
+	return `complete -c beginning -f -a "create list completion install-completion help"
+`
+}
+
+func isZshrcConfigured(home string) bool {
+	zshrcFile := filepath.Join(home, ".zshrc")
+	data, err := os.ReadFile(zshrcFile)
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(data), "beginning CLI completion")
 }

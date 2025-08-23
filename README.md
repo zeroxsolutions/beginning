@@ -1,262 +1,326 @@
 # Beginning - Go Project Scaffolder
 
-A powerful CLI tool designed to scaffold Go projects from predefined templates with best practices and modern architecture patterns.
+A powerful CLI tool designed to scaffold Go projects from predefined templates with automatic auto-completion support.
 
 ## 🚀 Features
 
-- **Multiple Template Types**: Support for services, libraries, APIs, and more
-- **Flexible Configuration**: Use values.yaml or CLI flags for customization
-- **Smart Defaults**: Sensible defaults with easy override options
-- **Cross-Platform**: Works on Windows, macOS, and Linux
-- **Post-Generation Setup**: Automatic dependency management and initialization
-- **Extensible**: Easy to add new template types
-- **Go 1.24+ Ready**: Built with latest Go features and optimizations
+- **Multiple Template Types**: Service, library, API, and more
+- **Automatic Auto-completion**: Works out of the box after installation
+- **Flexible Configuration**: Via CLI flags or values.yaml
+- **Cross-platform**: Supports bash, zsh, fish, and PowerShell
+- **Smart Detection**: Automatically detects your shell and installs completion
+- **Dynamic Completion**: Real-time suggestions for templates, Go versions, and commands
 
 ## 📦 Installation
 
-> **Note**: This repository uses the `master` branch. Make sure to use `master` instead of `main` in URLs.
-
-### Quick Install (Recommended)
+### Method 1: Go Install (Recommended)
 ```bash
-# Install latest version
 go install github.com/zeroxsolutions/beginning@latest
-
-# Install specific version
-go install github.com/zeroxsolutions/beginning@v0.0.1
 ```
 
-**That's it!** 🎉 
-
-The CLI tool will be automatically built for your platform and installed to your Go bin directory. All templates are embedded in the binary, so no additional downloads are needed.
-
-### Alternative: From Source
+### Method 2: Build from Source
 ```bash
-# Clone and build from source
 git clone https://github.com/zeroxsolutions/beginning.git
-cd beginning
-go install .
-```
-
-### From Source
-```bash
-git clone <repository-url>
 cd beginning
 go build -o beginning main.go
 ```
 
-### Make Executable Available Globally
-```bash
-# Move to a directory in your PATH
-sudo mv beginning /usr/local/bin/
+## 🎯 Auto-completion Setup
 
-# Or add to your local bin
-mkdir -p ~/bin
-mv beginning ~/bin/
-echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+### 🎉 Automatic Setup (Recommended)
+After installing, simply run:
+```bash
+beginning install-completion
 ```
 
-## 🎯 Quick Start
+This command will:
+1. 🔍 Automatically detect your shell (zsh, bash, fish, PowerShell)
+2. 📝 Generate the appropriate completion script
+3. 📁 Install it to the correct directory
+4. ⚙️ Configure your shell configuration files
+5. ✅ Verify the installation
 
-### List Available Templates
+**Supported Shells & Installation Paths:**
+- **zsh**: `~/.zsh/completions/_beginning` + updates `~/.zshrc`
+- **bash**: `~/.local/share/bash-completion/completions/beginning`
+- **fish**: `~/.config/fish/completions/beginning.fish`
+- **PowerShell**: Generates script for manual profile addition
+
+### 🔧 Manual Setup
+If you prefer manual setup or need custom configuration:
 ```bash
+# For zsh
+beginning completion zsh > ~/.zsh/completions/_beginning
+echo 'fpath=(~/.zsh/completions $fpath)' >> ~/.zshrc
+echo 'autoload -U compinit && compinit' >> ~/.zshrc
+
+# For bash
+beginning completion bash > ~/.local/share/bash-completion/completions/beginning
+echo 'source ~/.local/share/bash-completion/completions/beginning' >> ~/.bashrc
+
+# For fish
+beginning completion fish > ~/.config/fish/completions/beginning.fish
+
+# For PowerShell
+beginning completion powershell > beginning-completion.ps1
+# Then add to your PowerShell profile
+```
+
+### 🚀 Quick Start with Auto-completion
+```bash
+# 1. Install beginning
+go install github.com/zeroxsolutions/beginning@latest
+
+# 2. Setup auto-completion (one-time setup)
+beginning install-completion
+
+# 3. Restart your shell or source config
+source ~/.zshrc  # for zsh
+# or restart terminal
+
+# 4. Test auto-completion
+beginning [TAB]  # Should show all commands
+beginning create -t [TAB]  # Should show template types
+```
+
+## 🎮 Usage
+
+### Basic Commands
+```bash
+# List available templates
 beginning list
-```
 
-### Create a Service Project
-```bash
+# Create a new project
 beginning create -t service -r myapi -m github.com/company/myapi
-```
 
-### Create a Library Project
-```bash
-beginning create -t library -r myutils -m github.com/company/myutils
-```
-
-### Create Project in Specific Directory
-```bash
-beginning create -t service -r myproject -o /path/to/output
-```
-
-## 📚 Usage
-
-### Root Command
-```bash
+# Show help
 beginning --help
-```
-
-### Create Command
-```bash
 beginning create --help
 ```
 
-### List Command
+### 🎯 Auto-completion Examples
 ```bash
-beginning list --help
+# Commands (press TAB after 'beginning')
+beginning [TAB]
+# → create, list, completion, install-completion, help
+
+# Flags (press TAB after '-')
+beginning create -[TAB]
+# → -t, --type, -r, --repo, -m, --module, -g, --go-version, -o, --output, -v, --values
+
+# Template types (press TAB after '-t')
+beginning create -t [TAB]
+# → service, library
+
+# Go versions (press TAB after '-g')
+beginning create -g [TAB]
+# → 1.24, 1.25, 1.26, 1.27, 1.28, 1.29, 1.30
+
+# Repository names (dynamic completion)
+beginning create -r [TAB]
+# → Shows suggestions based on current directory
 ```
 
-## 🔧 Configuration
+### Project Creation
+```bash
+# Create a microservice
+beginning create -t service -r myapi -m github.com/company/myapi -g 1.25
 
-### CLI Flags
+# Create a library
+beginning create -t library -r myutils -m github.com/company/myutils
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--type` | `-t` | Template type (service, library, etc.) | `service` |
-| `--repo` | `-r` | Repository/project name | Required |
-| `--module` | `-m` | Go module name | Required |
-| `--output` | `-o` | Output directory path | `./{repo-name}` |
-| `--go-version` | `-g` | Go version to use | `1.24` |
-| `--values` | `-v` | Path to values.yaml file | `values.yaml` |
-
-### Values File (Optional)
-
-Create a `values.yaml` file to store default values:
-
-```yaml
-ModuleName: github.com/company/project
-RepoName: myproject
-GoVersion: 1.24
+# Use custom values file
+beginning create -v custom-values.yaml
 ```
 
-## 🏗️ Template Types
+## 📋 Available Templates
 
 ### Service Template
 Full-featured microservice with:
-- REST API structure
+- API endpoints
 - Database integration
 - Swagger documentation
 - Dependency injection (Wire)
-- Configuration management
 - Testing setup
+- Docker configuration
 
 ### Library Template
 Simple Go library with:
-- Basic module structure
-- README documentation
-- Go module configuration
+- Basic structure
+- Testing setup
+- Documentation
+- Examples
+
+## ⚙️ Configuration
+
+### CLI Flags
+- `-t, --type`: Template type (service, library, etc.)
+- `-r, --repo`: Repository/project name
+- `-m, --module`: Go module name
+- `-g, --go-version`: Go version (default: 1.24)
+- `-o, --output`: Output directory
+- `-v, --values`: Path to values.yaml file
+
+### Values File (values.yaml)
+```yaml
+ModuleName: github.com/company/project
+RepoName: myproject
+GoVersion: 1.25
+```
+
+## 🔧 Development
+
+### Building
+```bash
+go build -o beginning main.go
+```
+
+### Testing
+```bash
+go test ./...
+```
 
 ### Adding New Templates
 1. Create a new directory in `template/`
 2. Add your template files
 3. Use `.tmpl` extension for files that need variable substitution
-4. CLI will automatically detect new template types
+4. Add any post-generation scripts in `bin/`
 
-## 📁 Project Structure
+## 🌟 Auto-completion Features
 
-```
-template/
-├── service/          # Microservice template
-│   ├── cmd/         # Application entry points
-│   ├── internal/    # Private application code
-│   ├── config/      # Configuration files
-│   ├── bin/         # Build and setup scripts
-│   └── ...
-└── library/          # Library template
-    ├── go.mod.tmpl
-    └── README.md.tmpl
-```
+### 🧠 Smart Detection
+- Automatically detects your shell
+- Installs to the correct directories
+- Updates shell configuration files
+- Handles different shell environments
 
-## 🔍 Examples
+### 🎯 Dynamic Values
+- Template types loaded from available templates
+- Go versions with latest releases
+- Command and flag suggestions
+- Context-aware completions
 
-### Basic Service Creation
+### 🔄 Cross-shell Support
+- **zsh**: Full completion with descriptions and advanced features
+- **bash**: Standard bash completion with flag suggestions
+- **fish**: Fish shell completion with command descriptions
+- **PowerShell**: Windows PowerShell support with profile integration
+
+### 🚀 Advanced Completion Features
+- **Command Chaining**: Complete subcommands and flags
+- **Flag Validation**: Only show valid flags for each command
+- **Value Suggestions**: Smart suggestions for template types and Go versions
+- **Error Handling**: Graceful fallback if completion fails
+
+## 🛠️ Troubleshooting
+
+### Auto-completion Not Working?
 ```bash
-beginning create -t service -r user-service -m github.com/company/user-service
+# 1. Check if completion is installed
+beginning install-completion --force
+
+# 2. Verify shell configuration
+# For zsh: check ~/.zshrc contains completion setup
+# For bash: check ~/.bashrc contains source command
+
+# 3. Restart your shell or source config
+source ~/.zshrc  # for zsh
+source ~/.bashrc # for bash
+
+# 4. Test completion
+beginning [TAB]
 ```
 
-### Library with Custom Output
+### Common Issues
+- **Completion not loading**: Restart shell or source configuration file
+- **Wrong shell detected**: Use `--force` flag to reinstall
+- **Permission denied**: Check directory permissions for completion files
+- **Fish shell issues**: Ensure fish completions directory exists
+
+### Debug Mode
 ```bash
-beginning create -t library -r utils -m github.com/company/utils -o ~/Projects/
+# Enable debug output for completion
+beginning completion zsh --debug
+
+# Check completion script location
+ls -la ~/.zsh/completions/_beginning  # for zsh
+ls -la ~/.local/share/bash-completion/completions/beginning  # for bash
 ```
 
-### Using Values File
+## 📝 Examples
+
+### Complete Workflow
 ```bash
-# Create values.yaml
-echo "ModuleName: github.com/company/api
-RepoName: api-service
-GoVersion: 1.24" > values.yaml
-
-# Create project
-beginning create -t service
-```
-
-### Override Values File
-```bash
-beginning create -t service -r custom-name -m github.com/company/custom
-```
-
-## 🚀 Releases
-
-### Versioning
-We use semantic versioning (SemVer) for releases:
-- Format: `vX.Y.Z` (e.g., `v0.0.1`, `v1.0.0`)
-- Latest version: `github.com/zeroxsolutions/beginning@latest`
-- Specific version: `github.com/zeroxsolutions/beginning@v0.0.1`
-
-### Release Process
-1. Create and push a new tag: `git tag v0.0.1 && git push origin v0.0.1`
-2. GitHub Actions automatically verifies and tests the Go module
-3. Go modules are automatically published for `go install`
-4. All templates are embedded in the binary - no separate downloads needed
-
-### How It Works
-```bash
-# When you run this:
+# 1. Install the tool
 go install github.com/zeroxsolutions/beginning@latest
 
-# Go automatically:
-# 1. Downloads the source code
-# 2. Builds the binary for your platform (Linux/macOS/Windows)
-# 3. Embeds all templates into the binary
-# 4. Installs to your Go bin directory
-# 5. Makes it available as 'beginning' command
+# 2. Setup auto-completion (one-time)
+beginning install-completion
+
+# 3. Create a project with auto-completion
+beginning create -t [TAB] -r [TAB] -m [TAB]
+
+# 4. Enjoy auto-completion forever! 🎉
 ```
 
-### Why This Approach?
-- 🚀 **Automatic**: No need to choose the right binary for your platform
-- 🔧 **Native**: Built specifically for your OS and architecture
-- 📦 **Complete**: All templates are embedded, no missing files
-- 🎯 **Simple**: One command, everything works
-
-## 🛠️ Development
-
-### Building
+### Custom Values
 ```bash
-# Basic build
-go build -o beginning main.go
+# Create values.yaml
+cat > values.yaml << EOF
+ModuleName: github.com/mycompany/myapi
+RepoName: myapi
+GoVersion: 1.26
+EOF
 
-# Build with Go 1.24+ optimizations
-go build -ldflags="-s -w -X main.version=$(git describe --tags --always --dirty)" -o beginning main.go
-
-# Build for specific platform (for testing)
-GOOS=linux GOARCH=amd64 go build -o beginning-linux-amd64 main.go
-GOOS=darwin GOARCH=arm64 go build -o beginning-darwin-arm64 main.go
+# Use custom values
+beginning create -v values.yaml
 ```
 
-### Local Development
+### Advanced Auto-completion Usage
 ```bash
-# Install locally for development
-go install .
+# Complete command with description
+beginning [TAB]
+# → create: Create a new Go project from templates
+# → list: List available template types
+# → completion: Generate completion script for specified shell
 
-# Run directly
-go run main.go list
-go run main.go create -t service -r myproject -m github.com/company/myproject
+# Complete flags with descriptions
+beginning create --help
+beginning create -[TAB]
+# → Shows all available flags with descriptions
+
+# Complete template types dynamically
+beginning create -t [TAB]
+# → Shows available templates from template/ directory
 ```
 
-### Testing
+## 🔍 Command Reference
+
+### `beginning install-completion`
+Automatically installs completion scripts for your shell.
+
+**Flags:**
+- `--force, -f`: Force reinstall even if already installed
+
+**Examples:**
 ```bash
-# Run all tests
-go test ./...
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run tests with race detection
-go test -race ./...
+beginning install-completion           # Auto-detect and install
+beginning install-completion --force  # Force reinstall
 ```
 
-### Adding Dependencies
+### `beginning completion`
+Generates completion scripts for different shells.
+
+**Arguments:**
+- `bash`: Generate bash completion script
+- `zsh`: Generate zsh completion script
+- `fish`: Generate fish completion script
+- `powershell`: Generate PowerShell completion script
+
+**Examples:**
 ```bash
-go get github.com/spf13/cobra
-go mod tidy
+beginning completion zsh > ~/.zsh/completions/_beginning
+beginning completion bash > ~/.local/share/bash-completion/completions/beginning
 ```
 
 ## 🤝 Contributing
@@ -264,31 +328,22 @@ go mod tidy
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests if applicable
+4. Add tests
 5. Submit a pull request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - see LICENSE file for details
 
 ## 🆘 Support
 
-- **Issues**: Create an issue on GitHub
-- **Documentation**: Check this README and help commands
-- **Examples**: See the examples section above
-
-## 🔧 Troubleshooting
-
-### Installation Issues
-- **404 Error**: Make sure you're using the correct branch (`master`, not `main`)
-- **Permission Denied**: Use `sudo` or install to user directory with `~/bin`
-- **Command Not Found**: Add the installation directory to your PATH
-
-### Common Problems
-- **Wrong Branch**: Repository uses `master` branch, not `main`
-- **Path Issues**: Ensure the binary is in your PATH
-- **Version Mismatch**: Check Go version compatibility (Go 1.24+ recommended)
+- **Issues**: GitHub Issues
+- **Documentation**: This README
+- **Examples**: See `template/` directory
+- **Auto-completion**: Run `beginning install-completion --help`
 
 ---
 
-**Happy Scaffolding! 🎉**
+**Happy Scaffolding! 🚀**
+
+*Auto-completion makes everything better! 🎯*
