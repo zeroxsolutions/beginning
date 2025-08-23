@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"text/template"
 
@@ -501,7 +502,17 @@ func detectShell() string {
 		}
 	}
 
-	// Check if we're in PowerShell
+	// Check if we're in PowerShell (Windows)
+	if runtime.GOOS == "windows" {
+		// Check for PowerShell-specific environment variables
+		if os.Getenv("POWERSHELL_TELEMETRY_OPTOUT") != "" ||
+			os.Getenv("PSModulePath") != "" ||
+			os.Getenv("POWERSHELL") != "" {
+			return "powershell"
+		}
+	}
+
+	// Check for PowerShell on Unix-like systems (rare but possible)
 	if os.Getenv("POWERSHELL_TELEMETRY_OPTOUT") != "" {
 		return "powershell"
 	}
@@ -535,7 +546,16 @@ func installZshCompletion(force bool) {
 	check(os.MkdirAll(completionDir, 0755))
 
 	// Generate completion script using the completion command
-	cmd := exec.Command("./beginning", "completion", "zsh")
+	// Get the executable path to handle both local and go install scenarios
+	executable, err := os.Executable()
+	if err != nil {
+		// Fallback to basic completion script
+		completionScript := generateZshCompletion()
+		check(os.WriteFile(completionFile, []byte(completionScript), 0644))
+		return
+	}
+
+	cmd := exec.Command(executable, "completion", "zsh")
 	output, err := cmd.Output()
 	if err != nil {
 		// Fallback to basic completion script
@@ -580,10 +600,28 @@ func installBashCompletion(force bool) {
 	// Create completion directory
 	check(os.MkdirAll(completionDir, 0755))
 
-	// Generate and write completion script
-	completionScript := generateBashCompletion()
-	completionFile := filepath.Join(completionDir, "beginning")
-	check(os.WriteFile(completionFile, []byte(completionScript), 0644))
+	// Generate completion script using the completion command
+	// Get the executable path to handle both local and go install scenarios
+	executable, err := os.Executable()
+	if err != nil {
+		// Fallback to basic completion script
+		completionScript := generateBashCompletion()
+		completionFile := filepath.Join(completionDir, "beginning")
+		check(os.WriteFile(completionFile, []byte(completionScript), 0644))
+		return
+	}
+
+	cmd := exec.Command(executable, "completion", "bash")
+	output, err := cmd.Output()
+	if err != nil {
+		// Fallback to basic completion script
+		completionScript := generateBashCompletion()
+		completionFile := filepath.Join(completionDir, "beginning")
+		check(os.WriteFile(completionFile, []byte(completionScript), 0644))
+	} else {
+		completionFile := filepath.Join(completionDir, "beginning")
+		check(os.WriteFile(completionFile, output, 0644))
+	}
 
 	fmt.Println("ℹ️  To activate bash completion, add this to your ~/.bashrc:")
 	fmt.Println("   source ~/.local/share/bash-completion/completions/beginning")
@@ -596,16 +634,97 @@ func installFishCompletion(force bool) {
 	// Create completion directory
 	check(os.MkdirAll(completionDir, 0755))
 
-	// Generate and write completion script
-	completionScript := generateFishCompletion()
-	completionFile := filepath.Join(completionDir, "beginning.fish")
-	check(os.WriteFile(completionFile, []byte(completionScript), 0644))
+	// Generate completion script using the completion command
+	// Get the executable path to handle both local and go install scenarios
+	executable, err := os.Executable()
+	if err != nil {
+		// Fallback to basic completion script
+		completionScript := generateFishCompletion()
+		completionFile := filepath.Join(completionDir, "beginning.fish")
+		check(os.WriteFile(completionFile, []byte(completionScript), 0644))
+		return
+	}
+
+	cmd := exec.Command(executable, "completion", "fish")
+	output, err := cmd.Output()
+	if err != nil {
+		// Fallback to basic completion script
+		completionScript := generateFishCompletion()
+		completionFile := filepath.Join(completionDir, "beginning.fish")
+		check(os.WriteFile(completionFile, []byte(completionScript), 0644))
+	} else {
+		completionFile := filepath.Join(completionDir, "beginning.fish")
+		check(os.WriteFile(completionFile, output, 0644))
+	}
 }
 
 func installPowerShellCompletion(force bool) {
-	fmt.Println("ℹ️  PowerShell completion requires manual setup:")
-	fmt.Println("   1. Run: beginning completion powershell")
-	fmt.Println("   2. Copy the output to your PowerShell profile")
+	home := os.Getenv("HOME")
+	if home == "" {
+		home = os.Getenv("USERPROFILE") // Windows fallback
+	}
+
+	// PowerShell profile path
+	profilePath := ""
+	if runtime.GOOS == "windows" {
+		profilePath = filepath.Join(home, "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1")
+	} else {
+		profilePath = filepath.Join(home, ".config", "powershell", "Microsoft.PowerShell_profile.ps1")
+	}
+
+	// Create PowerShell profile directory if it doesn't exist
+	profileDir := filepath.Dir(profilePath)
+	check(os.MkdirAll(profileDir, 0755))
+
+	// Generate completion script using the completion command
+	executable, err := os.Executable()
+	if err != nil {
+		fmt.Println("ℹ️  PowerShell completion requires manual setup:")
+		fmt.Println("   1. Run: beginning completion powershell")
+		fmt.Println("   2. Copy the output to your PowerShell profile")
+		return
+	}
+
+	cmd := exec.Command(executable, "completion", "powershell")
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("ℹ️  PowerShell completion requires manual setup:")
+		fmt.Println("   1. Run: beginning completion powershell")
+		fmt.Println("   2. Copy the output to your PowerShell profile")
+		return
+	}
+
+	// Check if profile already contains beginning completion
+	profileContent := ""
+	if _, err := os.Stat(profilePath); err == nil {
+		data, err := os.ReadFile(profilePath)
+		if err == nil {
+			profileContent = string(data)
+		}
+	}
+
+	if strings.Contains(profileContent, "beginning CLI completion") {
+		fmt.Println("ℹ️  PowerShell profile already contains beginning completion")
+		return
+	}
+
+	// Add completion to PowerShell profile
+	completionBlock := fmt.Sprintf(`
+# beginning CLI completion
+%s
+`, string(output))
+
+	f, err := os.OpenFile(profilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err == nil {
+		defer f.Close()
+		f.WriteString(completionBlock)
+		fmt.Printf("✅ PowerShell completion installed to: %s\n", profilePath)
+		fmt.Println("Please restart PowerShell or run: . $PROFILE")
+	} else {
+		fmt.Println("ℹ️  PowerShell completion requires manual setup:")
+		fmt.Println("   1. Run: beginning completion powershell")
+		fmt.Println("   2. Copy the output to your PowerShell profile")
+	}
 }
 
 func generateZshCompletion() string {

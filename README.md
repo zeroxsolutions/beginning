@@ -18,6 +18,9 @@ A powerful CLI tool designed to scaffold Go projects from predefined templates w
 go install github.com/zeroxsolutions/beginning@latest
 ```
 
+**Note:** When installing via `go install`, the binary will be placed in `$GOPATH/bin` or `$HOME/go/bin`. 
+Make sure this directory is in your `$PATH` for the `beginning` command to work globally.
+
 ### Method 2: Build from Source
 ```bash
 git clone https://github.com/zeroxsolutions/beginning.git
@@ -188,6 +191,13 @@ go test ./...
 
 ## 🌟 Auto-completion Features
 
+### 🚀 Global Installation Support
+The auto-completion system works seamlessly whether you:
+- **Build from source**: `go build -o beginning main.go`
+- **Install globally**: `go install github.com/zeroxsolutions/beginning@latest`
+
+The tool automatically detects the executable path and generates completion scripts correctly.
+
 ### 🧠 Smart Detection
 - Automatically detects your shell
 - Installs to the correct directories
@@ -202,9 +212,9 @@ go test ./...
 
 ### 🔄 Cross-shell Support
 - **zsh**: Full completion with descriptions and advanced features
-- **bash**: Standard bash completion with flag suggestions
-- **fish**: Fish shell completion with command descriptions
-- **PowerShell**: Windows PowerShell support with profile integration
+- **bash**: Full completion with flag suggestions and command completion
+- **fish**: Full completion with command descriptions and advanced features
+- **PowerShell**: Full completion with profile integration and cross-platform support
 
 ### 🚀 Advanced Completion Features
 - **Command Chaining**: Complete subcommands and flags
@@ -236,6 +246,7 @@ beginning [TAB]
 - **Wrong shell detected**: Use `--force` flag to reinstall
 - **Permission denied**: Check directory permissions for completion files
 - **Fish shell issues**: Ensure fish completions directory exists
+- **Go install PATH issues**: Ensure `$GOPATH/bin` or `$HOME/go/bin` is in your `$PATH`
 
 ### Debug Mode
 ```bash
