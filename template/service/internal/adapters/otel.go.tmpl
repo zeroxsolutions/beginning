@@ -1,0 +1,101 @@
+package adapters
+
+import (
+	"context"
+	"log/slog"
+	"time"
+
+	"{{.ModuleName}}/internal/config"
+	"go.opentelemetry.io/contrib/instrumentation/runtime"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+)
+
+type OTEL struct {
+	appConfig *config.App
+
+	Logger  *slog.Logger
+	Tracer  *sdktrace.TracerProvider
+	Metrics *sdkmetric.MeterProvider
+}
+
+func NewOTEL(appConfig *config.App, logger *slog.Logger) *OTEL {
+	return &OTEL{
+		appConfig: appConfig,
+		Logger:    logger,
+	}
+}
+
+func (m *OTEL) Start(ctx context.Context) error {
+	res, err := resource.New(ctx,
+		resource.WithFromEnv(),
+		resource.WithAttributes(
+			attribute.String("service.name", m.appConfig.OTEL.ServiceName),
+			attribute.String("service.version", m.appConfig.OTEL.ServiceVersion),
+			attribute.String("environment", m.appConfig.OTEL.Environment),
+			attribute.String("server.addr", m.appConfig.Server.Addr),
+		),
+	)
+	if err != nil {
+		m.Logger.Error("resource", "error", err)
+		return err
+	}
+
+	trExp, err := otlptracegrpc.New(ctx) // reads OTEL_* envs
+	if err != nil {
+		m.Logger.Error("trace exporter", "error", err)
+		return err
+	}
+	mExp, err := otlpmetricgrpc.New(ctx) // reads OTEL_* envs
+	if err != nil {
+		m.Logger.Error("metric exporter", "error", err)
+		return err
+	}
+
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(trExp),
+		sdktrace.WithResource(res),
+	)
+	otel.SetTracerProvider(tp)
+
+	reader := sdkmetric.NewPeriodicReader(mExp, sdkmetric.WithInterval(10*time.Second))
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(reader),
+		sdkmetric.WithResource(res),
+	)
+	otel.SetMeterProvider(mp)
+
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{}, propagation.Baggage{}),
+	)
+
+	m.Tracer = tp
+	m.Metrics = mp
+
+	_ = runtime.Start(runtime.WithMeterProvider(mp))
+
+	m.Logger.Info("monitor started")
+	return nil
+}
+
+func (m *OTEL) Stop() error {
+	if m.Tracer != nil {
+		if err := m.Tracer.Shutdown(context.Background()); err != nil {
+			m.Logger.Error("tracer shutdown", "error", err)
+			return err
+		}
+	}
+	if m.Metrics != nil {
+		if err := m.Metrics.Shutdown(context.Background()); err != nil {
+			m.Logger.Error("metrics shutdown", "error", err)
+			return err
+		}
+	}
+	return nil
+}

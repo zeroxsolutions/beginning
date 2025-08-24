@@ -1,6 +1,7 @@
 package httpd
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -10,7 +11,9 @@ import (
 	_ "{{.ModuleName}}/docs"
 	"{{.ModuleName}}/internal/config"
 	"{{.ModuleName}}/internal/entrypoints/httpd/router"
+	"{{.ModuleName}}/internal/middlewares"
 	"github.com/zeroxsolutions/sazabi"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 // @BasePath /
@@ -20,6 +23,7 @@ import (
 func NewHTTPServer(
 	appConfig *config.App,
 	healthRouter *router.HealthRouter,
+	logger *slog.Logger,
 ) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	if appConfig.Server.Debug {
@@ -43,6 +47,8 @@ func NewHTTPServer(
 	ginDefault.Use(gin.LoggerWithConfig(gin.LoggerConfig{
 		SkipPaths: []string{"/health", "/swagger/*any"},
 	}))
+	ginDefault.Use(otelgin.Middleware(appConfig.OTEL.ServiceName))
+	ginDefault.Use(middlewares.NewLoggerMiddleware(logger))
 	healthRouter.RegisterRoutes(ginDefault.Group("/health"))
 	ginDefault.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	return ginDefault

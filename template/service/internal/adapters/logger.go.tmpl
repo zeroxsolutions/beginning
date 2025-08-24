@@ -1,0 +1,20 @@
+package adapters
+
+import (
+	"log/slog"
+	"os"
+
+	"{{.ModuleName}}/internal/config"
+)
+
+func NewLogger(appConfig *config.App) *slog.Logger {
+	handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})
+	return slog.New(handler).With(
+		slog.String("service.name", appConfig.OTEL.ServiceName),
+		slog.String("service.version", appConfig.OTEL.ServiceVersion),
+		slog.String("environment", appConfig.OTEL.Environment),
+		slog.String("server.addr", appConfig.Server.Addr),
+	)
+}

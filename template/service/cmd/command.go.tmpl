@@ -33,6 +33,7 @@ var (
 			if err != nil {
 				sazabi.Fatalf("initial app err %v\n", err)
 			}
+			defer application.Shutdown()
 			if err := application.Run(); err != nil {
 				sazabi.Fatalf("run app err %v\n", err)
 			}

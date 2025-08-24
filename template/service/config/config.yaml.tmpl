@@ -14,3 +14,9 @@ database:
     maxIdleConns: 10
     maxOpenConns: 100
     connMaxLifetime: 0
+otel:
+  enabled: false
+  endpoint: "http://localhost:4317"
+  serviceName: "{{.RepoName}}"
+  serviceVersion: "1.0.0"
+  environment: "development"

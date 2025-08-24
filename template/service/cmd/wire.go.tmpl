@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"{{.ModuleName}}/internal/adapters"
 	"github.com/google/wire"
 	"github.com/zeroxsolutions/barbatos/app"
 	"{{.ModuleName}}/internal/config"
@@ -19,6 +20,8 @@ func initHTTPDApplication(
 		controller.ProviderSetController,
 		router.ProviderSetRouter,
 		httpd.ProviderSetHTTPServer,
+		adapters.NewLogger,
+		adapters.NewOTEL,
 		httpd.NewApp,
 	)
 	return nil, nil
