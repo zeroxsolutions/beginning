@@ -254,7 +254,14 @@ func runScaffold(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Printf("Scaffolding %s project in: %s\n", templateType, outputDir)
-	check(os.MkdirAll(outputDir, 0755))
+
+	// Create output directory if it doesn't exist
+	if !fileExists(outputDir) {
+		check(os.MkdirAll(outputDir, 0755))
+	} else {
+		fmt.Printf("Output directory already exists: %s\n", outputDir)
+		os.Exit(1)
+	}
 
 	// Use the specific template type
 	templatePath := fmt.Sprintf("template/%s", templateType)

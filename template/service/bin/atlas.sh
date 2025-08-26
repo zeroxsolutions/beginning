@@ -9,6 +9,10 @@ then
     curl -sSf https://atlasgo.sh | sh
 fi
 
+project_dir="$(cd -- "$(dirname -- "$0")/.." &>/dev/null && pwd -P)"
+
+cd $project_dir
+
 if [ -f .env ];
 then
     export $(cat .env | xargs)

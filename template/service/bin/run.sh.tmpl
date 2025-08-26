@@ -12,11 +12,4 @@ project_dir="$(cd -- "$(dirname -- "$0")/.." &>/dev/null && pwd -P)"
 
 cd $project_dir
 
-export PATH=$PATH:$(go env GOPATH)/bin
-
-if ! commandExist wire;
-then
-  go install github.com/google/wire/cmd/wire@latest
-fi
-
-wire ./...
+go run -mod=mod cmd/{{.RepoName}}/main.go run --config config/config.yaml
