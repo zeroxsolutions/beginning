@@ -31,13 +31,13 @@ go mod download
 ### Build
 ```bash
 # Build the application
-go build -o bin/{{.RepoName}} cmd/{{.RepoName}}/main.go
+go build -o bin/{{.RepoName}} cmd/{{sanitize .RepoName}}/main.go
 
 # Build for production (Go 1.24+)
-CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/{{.RepoName}} cmd/{{.RepoName}}/main.go
+CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/{{.RepoName}} cmd/{{sanitize .RepoName}}/main.go
 
 # Build with Go 1.24+ features and optimizations
-go build -ldflags="-s -w -X main.version={{.GoVersion}} -X main.buildTime=$(date -u '+%Y-%m-%d_%H:%M:%S')" -o bin/{{.RepoName}} cmd/{{.RepoName}}/main.go
+go build -ldflags="-s -w -X main.version={{.GoVersion}} -X main.buildTime=$(date -u '+%Y-%m-%d_%H:%M:%S')" -o bin/{{.RepoName}} cmd/{{sanitize .RepoName}}/main.go
 ```
 
 ## 🚀 Quick Start
@@ -45,13 +45,13 @@ go build -ldflags="-s -w -X main.version={{.GoVersion}} -X main.buildTime=$(date
 ### Development Mode
 ```bash
 # Run with default configuration
-go run cmd/{{.RepoName}}/main.go run
+go run cmd/{{sanitize .RepoName}}/main.go run
 
 # Run with custom config file
-go run cmd/{{.RepoName}}/main.go run --config config/config.yaml
+go run cmd/{{sanitize .RepoName}}/main.go run --config config/config.yaml
 
 # Run with environment variables
-CONFIG_PATH=config/config.yaml go run cmd/{{.RepoName}}/main.go run
+CONFIG_PATH=config/config.yaml go run cmd/{{sanitize .RepoName}}/main.go run
 ```
 
 ### Production Mode
@@ -98,7 +98,7 @@ TEST_DB_URL="postgres://test:test@localhost:5432/test_db" go test -tags=integrat
 ### Run the Service for Testing
 ```bash
 # Start the service for manual testing
-go run cmd/{{.RepoName}}/main.go run --config config/config.yaml
+go run cmd/{{sanitize .RepoName}}/main.go run --config config/config.yaml
 ```
 
 ## ⚙️ Configuration
@@ -166,10 +166,10 @@ export DATABASE_URI="postgres://postgres:password@localhost:5432/{{.RepoName}}?s
 ### Run Migrations
 ```bash
 # Run migrations
-go run cmd/{{.RepoName}}/main.go migrate --config config/config.yaml
+go run cmd/{{sanitize .RepoName}}/main.go migrate --config config/config.yaml
 
 # Rollback migrations
-go run cmd/{{.RepoName}}/main.go migrate --rollback --config config/config.yaml
+go run cmd/{{sanitize .RepoName}}/main.go migrate --rollback --config config/config.yaml
 ```
 
 ## 📚 API Documentation
@@ -185,7 +185,7 @@ Once the service is running, visit:
 go install github.com/swaggo/swag/cmd/swag@latest
 
 # Generate docs
-swag init -g cmd/{{.RepoName}}/main.go
+swag init -g cmd/{{sanitize .RepoName}}/main.go
 ```
 
 ## 🐳 Docker

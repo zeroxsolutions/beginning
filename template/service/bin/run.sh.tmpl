@@ -12,4 +12,4 @@ project_dir="$(cd -- "$(dirname -- "$0")/.." &>/dev/null && pwd -P)"
 
 cd $project_dir
 
-go run -mod=mod cmd/{{.RepoName}}/main.go run --config config/config.yaml
+go run -mod=mod cmd/{{sanitize .RepoName}}/main.go run --config config/config.yaml

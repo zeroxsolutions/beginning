@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"text/template"
@@ -15,6 +16,21 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
+
+// precompile regexes for speed
+var (
+	reNonAlnum   = regexp.MustCompile(`[^A-Za-z0-9]+`) // anything not 0-9 or A-Z/a-z
+	reMultiUnder = regexp.MustCompile(`_+`)            // multiple underscores
+)
+
+// sanitize converts special chars to `_`, collapses repeats, trims edges
+func sanitize(s string) string {
+	// note: skip lowercasing if you want case preserved
+	out := reNonAlnum.ReplaceAllString(s, "_")
+	out = reMultiUnder.ReplaceAllString(out, "_")
+	out = strings.Trim(out, "_")
+	return out
+}
 
 type Values struct {
 	ModuleName string `yaml:"ModuleName"`
@@ -383,7 +399,9 @@ func loadValues() Values {
 }
 
 func renderTemplateBytes(content []byte, outputPath string, values Values) error {
-	tmpl, err := template.New("file").Parse(string(content))
+	tmpl, err := template.New("file").Funcs(template.FuncMap{
+		"sanitize": sanitize,
+	}).Parse(string(content))
 	check(err)
 
 	out, err := os.Create(outputPath)
@@ -400,7 +418,9 @@ func check(err error) {
 }
 
 func templatePathFunc(path string, data Values) (string, error) {
-	tmpl, err := template.New("path").Parse(path)
+	tmpl, err := template.New("path").Funcs(template.FuncMap{
+		"sanitize": sanitize,
+	}).Parse(path)
 	if err != nil {
 		return "", err
 	}
