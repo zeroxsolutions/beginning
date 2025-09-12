@@ -1,16 +1,18 @@
 package httpd
 
 import (
+	"net/http"
 	"log/slog"
 	"time"
 
+	scalargo "github.com/bdpiprava/scalar-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	_ "{{.ModuleName}}/docs"
 	"{{.ModuleName}}/internal/config"
+	"{{.ModuleName}}/internal/domain"
 	"{{.ModuleName}}/internal/entrypoint/httpd/router"
+	"{{.ModuleName}}/internal/entrypoint/httpd/schema"
 	"{{.ModuleName}}/internal/middleware"
 	"github.com/zeroxsolutions/sazabi"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -45,12 +47,24 @@ func NewHTTPServer(
 	ginDefault.Use(cors.New(corsConfig))
 	ginDefault.Use(gin.Recovery())
 	ginDefault.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-		SkipPaths: []string{"/health", "/ready", "/swagger/*any"},
+		SkipPaths: []string{"/health", "/ready", "/docs"},
 	}))
 	ginDefault.Use(otelgin.Middleware(appConfig.OTEL.ServiceName))
 	ginDefault.Use(middleware.NewLoggerMiddleware(logger))
 	healthRouter.RegisterRoutes(ginDefault.Group("/health"))
 	readyRouter.RegisterRoutes(ginDefault.Group("/ready"))
-	ginDefault.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	ginDefault.GET("/docs", func(ctx *gin.Context) {
+		html, err := scalargo.NewV2(
+			scalargo.WithSpecDir("./docs"),
+			scalargo.WithBaseFileName("swagger.json"),
+		)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, schema.ErrorResponse{
+				Error: domain.NewError(domain.ErrorCodeInternalServerError, err.Error()),
+			})
+			return
+		}
+		ctx.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+	})
 	return ginDefault
 }
