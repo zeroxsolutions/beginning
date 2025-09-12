@@ -23,11 +23,11 @@ var (
 	reMultiUnder = regexp.MustCompile(`_+`)            // multiple underscores
 )
 
-// sanitize converts special chars to `_`, collapses repeats, trims edges
+// sanitize converts special chars to "", collapses repeats, trims edges
 func sanitize(s string) string {
 	// note: skip lowercasing if you want case preserved
-	out := reNonAlnum.ReplaceAllString(s, "_")
-	out = reMultiUnder.ReplaceAllString(out, "_")
+	out := reNonAlnum.ReplaceAllString(s, "")
+	out = reMultiUnder.ReplaceAllString(out, "")
 	out = strings.Trim(out, "_")
 	return out
 }

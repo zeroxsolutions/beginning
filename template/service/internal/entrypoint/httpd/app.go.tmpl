@@ -5,14 +5,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/zeroxsolutions/barbatos/app"
-	"{{.ModuleName}}/internal/adapters"
+	"{{.ModuleName}}/internal/adapter"
 	"{{.ModuleName}}/internal/config"
 )
 
 type App struct {
 	appConfig *config.App
 	srv       *gin.Engine
-	otel      *adapters.OTEL
+	otel      *adapter.OTEL
 }
 
 func (app *App) Run() error {
@@ -35,7 +35,7 @@ func (app *App) Shutdown() error {
 func NewApp(
 	srv *gin.Engine,
 	appConfig *config.App,
-	otel *adapters.OTEL,
+	otel *adapter.OTEL,
 ) app.App {
 	return &App{
 		appConfig: appConfig,

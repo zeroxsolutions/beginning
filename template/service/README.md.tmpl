@@ -223,7 +223,7 @@ docker-compose down
 ```
 {{.RepoName}}/
 ├── cmd/                    # Application entry points
-│   └── {{.RepoName}}/     # Main application
+│   └── {{ sanitize .RepoName }}/     # Main application
 ├── internal/               # Private application code
 │   ├── config/            # Configuration management
 │   ├── database/          # Database operations

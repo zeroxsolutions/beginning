@@ -4,13 +4,13 @@
 package cmd
 
 import (
-	"{{.ModuleName}}/internal/adapters"
+	"{{.ModuleName}}/internal/adapter"
 	"github.com/google/wire"
 	"github.com/zeroxsolutions/barbatos/app"
 	"{{.ModuleName}}/internal/config"
-	"{{.ModuleName}}/internal/entrypoints/httpd"
-	"{{.ModuleName}}/internal/entrypoints/httpd/controller"
-	"{{.ModuleName}}/internal/entrypoints/httpd/router"
+	"{{.ModuleName}}/internal/entrypoint/httpd"
+	"{{.ModuleName}}/internal/entrypoint/httpd/controller"
+	"{{.ModuleName}}/internal/entrypoint/httpd/router"
 )
 
 func initHTTPDApplication(
@@ -20,9 +20,9 @@ func initHTTPDApplication(
 		controller.ProviderSetController,
 		router.ProviderSetRouter,
 		httpd.ProviderSetHTTPServer,
-		adapters.NewLogger,
-		adapters.NewOTEL,
-		adapters.NewDB,
+		adapter.NewLogger,
+		adapter.NewOTEL,
+		adapter.NewDB,
 		httpd.NewApp,
 	)
 	return nil, nil

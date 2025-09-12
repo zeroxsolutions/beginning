@@ -10,8 +10,8 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	_ "{{.ModuleName}}/docs"
 	"{{.ModuleName}}/internal/config"
-	"{{.ModuleName}}/internal/entrypoints/httpd/router"
-	"{{.ModuleName}}/internal/middlewares"
+	"{{.ModuleName}}/internal/entrypoint/httpd/router"
+	"{{.ModuleName}}/internal/middleware"
 	"github.com/zeroxsolutions/sazabi"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
@@ -44,12 +44,11 @@ func NewHTTPServer(
 	corsConfig.MaxAge = maxAge
 	ginDefault.Use(cors.New(corsConfig))
 	ginDefault.Use(gin.Recovery())
-	ginDefault.Use(gin.Logger())
 	ginDefault.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-		SkipPaths: []string{"/health", "/swagger/*any"},
+		SkipPaths: []string{"/health", "/ready", "/swagger/*any"},
 	}))
 	ginDefault.Use(otelgin.Middleware(appConfig.OTEL.ServiceName))
-	ginDefault.Use(middlewares.NewLoggerMiddleware(logger))
+	ginDefault.Use(middleware.NewLoggerMiddleware(logger))
 	healthRouter.RegisterRoutes(ginDefault.Group("/health"))
 	readyRouter.RegisterRoutes(ginDefault.Group("/ready"))
 	ginDefault.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

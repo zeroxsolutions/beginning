@@ -19,4 +19,4 @@ then
   go install github.com/swaggo/swag/cmd/swag@latest
 fi
 
-swag init -g ./internal/entrypoints/httpd/httpserver.go -d ./
+swag init -g ./internal/entrypoint/httpd/httpserver.go -d ./
