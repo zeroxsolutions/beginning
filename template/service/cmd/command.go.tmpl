@@ -25,7 +25,7 @@ var (
 		Short: "run",
 		Long:  "run",
 		Run: func(cmd *cobra.Command, args []string) {
-			appConfig, err := ReadConfig[config.App](configFilePaths...)
+			appConfig, err := ReadConfig(configFilePaths...)
 			if err != nil {
 				sazabi.Fatalf("read config err %v\n", err)
 			}

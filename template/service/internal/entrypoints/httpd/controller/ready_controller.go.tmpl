@@ -1,0 +1,44 @@
+package controller
+
+import (
+	"net/http"
+
+	"{{.ModuleName}}/internal/entrypoints/httpd/schema"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
+
+type ReadyController struct {
+	db *gorm.DB
+}
+
+func NewReadyController(db *gorm.DB) *ReadyController {
+	return &ReadyController{db: db}
+}
+
+// Ready Ready check
+// @Tags Ready
+// @Produce json
+// @Success 200 {object} schema.ReadyResponse
+// @Router /ready [get]
+func (readyController *ReadyController) Ready(ctx *gin.Context) {
+	readyResponse := schema.ReadyResponse{
+		Status: schema.ReadyStatusReady,
+		Dependencies: []*schema.ReadyDependency{
+			{
+				Name:   schema.DependencyNameDatabase,
+				Status: schema.DependencyStatusReady,
+			},
+		},
+	}
+	if err := readyController.db.Raw("SELECT 1").Error; err != nil {
+		readyResponse.Status = schema.ReadyStatusNotReady
+		readyResponse.Dependencies = append(readyResponse.Dependencies, &schema.ReadyDependency{
+			Name:   schema.DependencyNameDatabase,
+			Status: schema.DependencyStatusFailed,
+		})
+		ctx.JSON(http.StatusServiceUnavailable, readyResponse)
+		return
+	}
+	ctx.JSON(http.StatusOK, readyResponse)
+}

@@ -4,6 +4,5 @@ type OTEL struct {
 	Enabled        bool   `json:"enabled" yaml:"enabled" env:"OTEL_ENABLED" default:"false"`
 	Endpoint       string `json:"endpoint" yaml:"endpoint" env:"OTEL_ENDPOINT" default:"http://localhost:4317"`
 	ServiceName    string `json:"serviceName" yaml:"serviceName" env:"OTEL_SERVICE_NAME" default:"{{.RepoName}}"`
-	ServiceVersion string `json:"serviceVersion" yaml:"serviceVersion" env:"OTEL_SERVICE_VERSION" default:"1.0.0"`
 	Environment    string `json:"environment" yaml:"environment" env:"OTEL_ENVIRONMENT" default:"development"`
 }

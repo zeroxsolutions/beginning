@@ -37,7 +37,7 @@ func (m *OTEL) Start(ctx context.Context) error {
 		resource.WithFromEnv(),
 		resource.WithAttributes(
 			attribute.String("service.name", m.appConfig.OTEL.ServiceName),
-			attribute.String("service.version", m.appConfig.OTEL.ServiceVersion),
+			attribute.String("service.version", config.Version),
 			attribute.String("environment", m.appConfig.OTEL.Environment),
 			attribute.String("server.addr", m.appConfig.Server.Addr),
 		),

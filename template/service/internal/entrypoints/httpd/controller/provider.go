@@ -4,4 +4,5 @@ import "github.com/google/wire"
 
 var ProviderSetController = wire.NewSet(
 	NewHealthController,
+	NewReadyController,
 )

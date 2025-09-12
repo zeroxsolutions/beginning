@@ -13,7 +13,7 @@ func NewLogger(appConfig *config.App) *slog.Logger {
 	})
 	return slog.New(handler).With(
 		slog.String("service.name", appConfig.OTEL.ServiceName),
-		slog.String("service.version", appConfig.OTEL.ServiceVersion),
+		slog.String("service.version", config.Version),
 		slog.String("environment", appConfig.OTEL.Environment),
 		slog.String("server.addr", appConfig.Server.Addr),
 	)

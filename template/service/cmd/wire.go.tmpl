@@ -22,6 +22,7 @@ func initHTTPDApplication(
 		httpd.ProviderSetHTTPServer,
 		adapters.NewLogger,
 		adapters.NewOTEL,
+		adapters.NewDB,
 		httpd.NewApp,
 	)
 	return nil, nil

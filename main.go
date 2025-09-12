@@ -308,6 +308,11 @@ func runScaffold(cmd *cobra.Command, args []string) {
 				gitignorePath := filepath.Join(filepath.Dir(targetPath), ".gitignore")
 				return renderTemplateBytes(data, gitignorePath, values)
 			}
+			// Special handling for gitkeep.tmpl -> .gitkeep
+			if strings.HasSuffix(path, "gitkeep.tmpl") {
+				gitkeepPath := filepath.Join(filepath.Dir(targetPath), ".gitkeep")
+				return renderTemplateBytes(data, gitkeepPath, values)
+			}
 			// Regular template files: remove .tmpl extension
 			return renderTemplateBytes(data, targetPath[:len(targetPath)-5], values)
 		} else {

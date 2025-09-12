@@ -23,6 +23,7 @@ import (
 func NewHTTPServer(
 	appConfig *config.App,
 	healthRouter *router.HealthRouter,
+	readyRouter *router.ReadyRouter,
 	logger *slog.Logger,
 ) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
@@ -50,6 +51,7 @@ func NewHTTPServer(
 	ginDefault.Use(otelgin.Middleware(appConfig.OTEL.ServiceName))
 	ginDefault.Use(middlewares.NewLoggerMiddleware(logger))
 	healthRouter.RegisterRoutes(ginDefault.Group("/health"))
+	readyRouter.RegisterRoutes(ginDefault.Group("/ready"))
 	ginDefault.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	return ginDefault
 }

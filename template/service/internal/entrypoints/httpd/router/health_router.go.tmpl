@@ -10,7 +10,7 @@ type HealthRouter struct {
 }
 
 func (healthRouter *HealthRouter) RegisterRoutes(router *gin.RouterGroup) {
-	router.GET("/", healthRouter.HealthController.Health)
+	router.GET("", healthRouter.HealthController.Health)
 }
 
 func NewHealthRouter(healthController *controller.HealthController) *HealthRouter {

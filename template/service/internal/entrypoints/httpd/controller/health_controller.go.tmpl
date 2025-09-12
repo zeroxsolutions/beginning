@@ -1,0 +1,28 @@
+package controller
+
+import (
+	"net/http"
+	"time"
+
+	"{{.ModuleName}}/internal/entrypoints/httpd/schema"
+	"github.com/gin-gonic/gin"
+)
+
+type HealthController struct{}
+
+// Health Health check
+// @Tags Health
+// @Produce json
+// @Success 200 {object} schema.HealthResponse
+// @Router /health [get]
+func (healthController *HealthController) Health(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, schema.HealthResponse{
+		Status:    schema.HealthStatusOK,
+		Timestamp: time.Now().Unix(),
+		IpAddress: ctx.ClientIP(),
+	})
+}
+
+func NewHealthController() *HealthController {
+	return &HealthController{}
+}

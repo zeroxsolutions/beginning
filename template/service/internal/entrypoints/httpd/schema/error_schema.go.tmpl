@@ -1,0 +1,7 @@
+package schema
+
+import "{{.ModuleName}}/internal/domain"
+
+type ErrorResponse struct {
+	Error *domain.Error `json:"error,omitempty"`
+}
